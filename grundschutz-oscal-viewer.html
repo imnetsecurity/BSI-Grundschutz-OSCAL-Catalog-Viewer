@@ -1,0 +1,5288 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grundschutz++ OSCAL Viewer (Standalone v5-final)</title>
+  <style>
+    :root{
+      --bg:#0b0d10; --panel:#12161b; --panel2:#0f1317;
+      --text:#e8eef5; --muted:#a8b3c2; --line:#243041; --accent:#6aa9ff;
+      --warn:#ffce6a; --ok:#7cff8a; --danger:#ff6a6a; --hl:#ffe28a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, #132033, transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, #1d1433, transparent 55%),
+        var(--bg);
+    }
+    header{
+      position:sticky; top:0; z-index:20;
+      background: linear-gradient(to bottom, rgba(11,13,16,.95), rgba(11,13,16,.75));
+      border-bottom:1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+    .bar{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      padding:14px 16px;
+      align-items:center;
+      max-width: 1700px;
+      margin: 0 auto;
+    }
+    .title{display:flex; flex-direction:column; gap:2px}
+    .title h1{margin:0; font-size:16px; font-weight:700; letter-spacing:.2px}
+    .title .sub{font-size:12px; color:var(--muted)}
+    .controls{display:flex; gap:10px; align-items:center; justify-content:flex-end; flex-wrap:wrap}
+    .field{
+      display:flex; gap:8px; align-items:center;
+      background: rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+    }
+    .field input[type="url"], .field input[type="search"], .field input[type="text"]{
+      width:100%;
+      border:0; outline:0;
+      background:transparent; color:var(--text);
+      font-size:13px;
+    }
+    .select{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color:var(--text);
+      padding:10px 10px;
+      border-radius:12px;
+      font-size:13px;
+      outline:0;
+      min-width: 140px;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      font-size:13px;
+      cursor:pointer;
+      transition: transform .05s ease, border-color .15s ease, background .15s ease;
+      user-select:none;
+    }
+    .btn:hover{border-color: rgba(106,169,255,.65); background: rgba(106,169,255,.08)}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{border-color: rgba(106,169,255,.8); background: rgba(106,169,255,.12)}
+    .btn.primary:hover{background: rgba(106,169,255,.18)}
+    .btn.danger:hover{border-color: rgba(255,106,106,.75); background: rgba(255,106,106,.08)}
+    .btn.tgl[aria-pressed="true"]{border-color: rgba(106,169,255,.85); background: rgba(106,169,255,.16)}
+    .btn.small{padding:7px 10px; font-size:12px; border-radius:10px}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      font-size:12px; line-height:18px;
+      white-space:nowrap;
+    }
+    .pill strong{color:var(--text); font-weight:650}
+    .pill.ok{border-color: rgba(124,255,138,.35); background: rgba(124,255,138,.06); color: var(--ok)}
+    .pill.bad{border-color: rgba(255,106,106,.35); background: rgba(255,106,106,.06); color: var(--danger)}
+    .meta{
+      display:flex; gap:8px; flex-wrap:wrap;
+      padding:0 16px 14px 16px;
+      max-width: 1700px;
+      margin: 0 auto;
+      align-items:center;
+    }
+    .meta a{color:var(--accent); text-decoration:none}
+    .meta a:hover{text-decoration:underline}
+    .meta .spacer{flex:1}
+    .row{
+      display:grid;
+      grid-template-columns: 580px 1fr;
+      height: calc(100vh - 92px);
+      max-width: 1700px;
+      margin: 0 auto;
+    }
+    aside{
+      border-right:1px solid var(--line);
+      background: linear-gradient(to bottom, rgba(18,22,27,.9), rgba(18,22,27,.6));
+    }
+    main{
+      background: linear-gradient(to bottom, rgba(15,19,23,.65), rgba(15,19,23,.25));
+    }
+    .pane{height:100%; overflow:auto; padding:14px 14px 18px 14px}
+    .stack{display:flex; flex-direction:column; gap:10px}
+    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .grid3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px}
+    .label{font-size:12px; color:var(--muted); margin: 0 0 6px 2px}
+    .mono{font-family:var(--mono)}
+    .small{font-size:12px; color:var(--muted)}
+    .muted{color:var(--muted)}
+    .count{color:var(--muted); font-size:12px; white-space:nowrap}
+    .hr{border:0; border-top:1px solid rgba(36,48,65,.55); margin:10px 0}
+    .help{
+      font-size:12px; color:var(--muted);
+      border:1px dashed rgba(36,48,65,.9);
+      border-radius:12px;
+      padding:10px 12px;
+      background: rgba(0,0,0,.10);
+    }
+    .help code{
+      font-family:var(--mono);
+      font-size:12px;
+      color: rgba(255,206,106,.95);
+    }
+
+    /* Tree */
+    .tree{
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
+      background: rgba(0,0,0,.08);
+    }
+    .treeRow{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:9px 10px;
+      border-bottom:1px solid rgba(36,48,65,.55);
+      cursor:pointer;
+      user-select:none;
+    }
+    .treeRow:last-child{border-bottom:0}
+    .treeRow:hover{background: rgba(255,255,255,.03)}
+    .treeRow.active{background: rgba(106,169,255,.10)}
+    .caret{
+      width:18px; height:18px; flex:0 0 auto;
+      border:1px solid rgba(36,48,65,.9);
+      border-radius:6px;
+      background: rgba(255,255,255,.03);
+      display:grid; place-items:center;
+      font-family:var(--mono); color:var(--muted); font-size:12px;
+      margin-top:1px;
+    }
+    .caret.blank{border-color: transparent; background: transparent}
+    .selcb{
+      margin-top:3px;
+      accent-color: var(--accent);
+      transform: translateY(1px);
+    }
+    .nodeBody{flex:1; min-width:0}
+    .nodeLine1{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap}
+    .nid{font-family:var(--mono); font-size:12px; color:var(--accent); min-width:74px}
+    .ntitle{font-size:13px; font-weight:700}
+    .nsnippet{margin-top:4px; font-size:12px; color:var(--muted); line-height:1.35}
+    .badges{display:flex; gap:6px; flex-wrap:wrap; margin-left:auto}
+    .badge{
+      font-size:11px; line-height:16px;
+      padding:1px 7px;
+      border-radius:999px;
+      border:1px solid rgba(36,48,65,.9);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .badge.k{border-color: rgba(106,169,255,.45); color: rgba(106,169,255,.95); background: rgba(106,169,255,.06)}
+    .badge.w{border-color: rgba(255,206,106,.45); color: rgba(255,206,106,.95); background: rgba(255,206,106,.06)}
+    .badge.r{border-color: rgba(255,106,106,.45); color: rgba(255,106,106,.95); background: rgba(255,106,106,.06)}
+
+    /* Main tabs */
+    .tabbar{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 10px;
+      margin: -14px -14px 12px -14px;
+      background: linear-gradient(to bottom, rgba(15,19,23,.98), rgba(15,19,23,.80));
+      border-bottom:1px solid rgba(36,48,65,.75);
+      backdrop-filter: blur(8px);
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+    .tab{
+      border:1px solid rgba(36,48,65,.85);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      padding:8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor:pointer;
+    }
+    .tab:hover{border-color: rgba(106,169,255,.55); background: rgba(106,169,255,.08); color: var(--text)}
+    .tab.active{
+      border-color: rgba(106,169,255,.85);
+      background: rgba(106,169,255,.16);
+      color: var(--text);
+    }
+    .panel{display:block}
+    .panel[hidden]{display:none}
+
+    /* Detail card */
+    .detailCard{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background: rgba(0,0,0,.12);
+      padding:14px;
+    }
+    .empty{
+      border:1px dashed rgba(36,48,65,.9);
+      border-radius:16px;
+      padding:18px;
+      color:var(--muted);
+      background: rgba(0,0,0,.08);
+    }
+    .detailHeader{
+      display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      border-bottom:1px solid rgba(36,48,65,.75); padding-bottom:12px; margin-bottom:12px;
+    }
+    .detailHeader h2{margin:0; font-size:18px}
+    .split{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .section{margin-top:12px}
+    .section h3{
+      margin:0 0 8px 0;
+      font-size:13px;
+      color:var(--muted);
+      font-weight:750;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+    .prose{font-size:14px; line-height:1.55; white-space:pre-wrap}
+    .param{
+      display:inline-block; font-family:var(--mono); font-size:12px;
+      padding:1px 6px;
+      border-radius:8px;
+      border:1px dashed rgba(255,206,106,.8);
+      color:var(--warn);
+      background: rgba(255,206,106,.06);
+      vertical-align:baseline;
+      cursor:pointer;
+    }
+    .param:hover{background: rgba(255,206,106,.10)}
+    mark.hl{
+      background: rgba(255,226,138,.22);
+      color: var(--text);
+      border-bottom: 1px solid rgba(255,226,138,.7);
+      padding: 0 1px;
+      border-radius: 4px;
+    }
+    mark.hl.active{
+      outline: 2px solid rgba(106,169,255,.75);
+      background: rgba(106,169,255,.18);
+      border-bottom-color: rgba(106,169,255,.9);
+    }
+
+    details.acc{
+      border:1px solid rgba(36,48,65,.75);
+      border-radius:14px;
+      background: rgba(0,0,0,.10);
+      overflow:hidden;
+      margin-top:10px;
+    }
+    details.acc summary{
+      cursor:pointer;
+      padding:10px 12px;
+      user-select:none;
+      list-style:none;
+      font-size:13px;
+      border-bottom:1px solid rgba(36,48,65,.55);
+      display:flex; align-items:center; gap:10px;
+    }
+    details.acc summary::-webkit-details-marker{display:none}
+    details.acc summary::before{
+      content:"+";
+      font-family:var(--mono);
+      display:inline-grid;
+      place-items:center;
+      width:18px; height:18px;
+      border:1px solid rgba(36,48,65,.9);
+      border-radius:6px;
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+    }
+    details.acc[open] summary::before{content:"-"}
+    details.acc .accBody{padding:12px}
+    .code{
+      font-family:var(--mono);
+      font-size:12px;
+      border:1px solid rgba(36,48,65,.75);
+      border-radius:12px;
+      padding:10px;
+      background: rgba(0,0,0,.18);
+      overflow:auto;
+      white-space:pre;
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 170px 1fr;
+      gap:6px 10px;
+      font-size:13px;
+      align-items:baseline;
+    }
+    .k{color:var(--muted); font-size:12px}
+    .v{min-width:0}
+
+    /* Simple charts */
+    .cardGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .card{
+      border:1px solid rgba(36,48,65,.75);
+      border-radius:16px;
+      background: rgba(0,0,0,.10);
+      padding:12px;
+    }
+    .card h4{
+      margin:0 0 8px 0;
+      font-size:13px;
+      color: var(--text);
+    }
+    .bars{display:flex; flex-direction:column; gap:6px}
+    .barRow{
+      display:grid;
+      grid-template-columns: 1fr 3fr auto;
+      gap:10px;
+      align-items:center;
+      font-size:12px;
+    }
+    .barLabel{color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .barTrack{
+      height: 10px;
+      border:1px solid rgba(36,48,65,.85);
+      border-radius: 999px;
+      background: rgba(255,255,255,.02);
+      overflow:hidden;
+    }
+    .barFill{
+      height:100%;
+      width: 0%;
+      background: rgba(106,169,255,.45);
+    }
+    .barValue{color:var(--muted); font-family:var(--mono); font-size:11px}
+
+    /* Tables */
+    .table{
+      width:100%;
+      border-collapse: collapse;
+      font-size:13px;
+      overflow:hidden;
+      border-radius:12px;
+      border:1px solid rgba(36,48,65,.7);
+    }
+    .table th,.table td{
+      padding:8px 10px;
+      border-bottom:1px solid rgba(36,48,65,.55);
+      vertical-align:top;
+    }
+    .table th{color:var(--muted); font-size:12px; text-align:left; background: rgba(255,255,255,.02)}
+    .table tr:hover td{background: rgba(255,255,255,.02)}
+    .link{color:var(--accent); text-decoration:none}
+    .link:hover{text-decoration:underline}
+
+    /* Matrix */
+    .matrixWrap{
+      overflow:auto;
+      border:1px solid rgba(36,48,65,.7);
+      border-radius:14px;
+      background: rgba(0,0,0,.08);
+    }
+    .matrix{
+      border-collapse: collapse;
+      font-size:11px;
+      min-width: 760px;
+    }
+    .matrix th,.matrix td{
+      border-bottom:1px solid rgba(36,48,65,.45);
+      border-right:1px solid rgba(36,48,65,.35);
+      padding:4px 6px;
+      text-align:center;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+    .matrix th{
+      position: sticky;
+      top: 0;
+      background: rgba(18,22,27,.96);
+      z-index:2;
+      color: var(--muted);
+      font-weight:650;
+    }
+    .matrix th.left{
+      left:0;
+      z-index:3;
+    }
+    .matrix td.left{
+      position: sticky;
+      left:0;
+      z-index:1;
+      background: rgba(18,22,27,.55);
+      text-align:left;
+      font-family:var(--mono);
+      color: var(--accent);
+    }
+    .dot{
+      display:inline-block;
+      width:8px; height:8px;
+      border-radius:999px;
+      background: rgba(106,169,255,.65);
+    }
+    .dot.zero{opacity:.15}
+    .cellNum{font-family:var(--mono); font-size:11px; color: var(--muted)}
+
+    /* Modal */
+    .modal{
+      position:fixed; inset:0;
+      display:none;
+      align-items:stretch;
+      background: rgba(0,0,0,.55);
+      z-index:999;
+    }
+    .modal.show{display:flex}
+    .modalCard{
+      width:min(1050px, 96vw);
+      margin:auto;
+      border:1px solid rgba(36,48,65,.95);
+      border-radius:16px;
+      background: rgba(18,22,27,.96);
+      box-shadow: 0 24px 60px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    .modalTop{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(36,48,65,.7);
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+    }
+    .modalBody{padding:14px; max-height: 72vh; overflow:auto}
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(36,48,65,.9);
+      background: rgba(18,22,27,.92);
+      color: var(--text);
+      font-size: 12px;
+      display:none;
+      z-index: 2000;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    .toast.show{display:block}
+    .toast .muted{color:var(--muted)}
+
+    /* Evidence & notes */
+    textarea{
+      width:100%;
+      min-height: 110px;
+      resize: vertical;
+      border:1px solid rgba(36,48,65,.8);
+      border-radius:12px;
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding:10px;
+      font-family: var(--sans);
+      font-size: 13px;
+      outline: none;
+    }
+
+    /* SVG graph */
+    .graphWrap{
+      border:1px solid rgba(36,48,65,.75);
+      border-radius:16px;
+      background: rgba(0,0,0,.08);
+      overflow:hidden;
+    }
+    .graphHdr{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(36,48,65,.55);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .graphHdr .small{margin:0}
+    svg.localGraph{width:100%; height:260px; display:block}
+    .gNode rect{
+      fill: rgba(255,255,255,.03);
+      stroke: rgba(36,48,65,.9);
+      rx: 10; ry: 10;
+    }
+    .gNode text{
+      fill: var(--text);
+      font-size: 12px;
+      font-family: var(--mono);
+      pointer-events:none;
+    }
+    .gEdge{
+      stroke: rgba(106,169,255,.55);
+      stroke-width: 1.2;
+      fill: none;
+    }
+    .gEdge.in{stroke: rgba(255,206,106,.55)}
+    .gEdge.broken{stroke: rgba(255,106,106,.55); stroke-dasharray: 4 4}
+    .gNode.center rect{fill: rgba(106,169,255,.10); stroke: rgba(106,169,255,.75)}
+    .gNode:hover rect{stroke: rgba(106,169,255,.85); fill: rgba(106,169,255,.12)}
+    .tooltip{
+      position: fixed;
+      pointer-events: none;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(36,48,65,.85);
+      background: rgba(18,22,27,.94);
+      color: var(--text);
+      font-size: 12px;
+      display:none;
+      z-index: 2100;
+      max-width: 320px;
+      box-shadow: 0 14px 48px rgba(0,0,0,.45);
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px){
+      .row{grid-template-columns: 1fr; height:auto}
+      aside{border-right:0; border-bottom:1px solid var(--line)}
+      .pane{height:auto}
+      .grid3{grid-template-columns: 1fr}
+      .grid2{grid-template-columns: 1fr}
+      .cardGrid{grid-template-columns: 1fr}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="title">
+      <h1>Grundschutz++ OSCAL Viewer</h1>
+      <div class="sub">Standalone HTML v4 · Query Language · Tree/Grouping · Visualizations · Selection/Profile · Mapping/Trace · Lint · Diff · Notes/Evidence</div>
+    </div>
+
+    <div class="controls">
+      <div class="field" style="min-width:min(900px, 58vw);">
+        <input id="url" type="url" spellcheck="false"
+               value="https://github.com/BSI-Bund/Stand-der-Technik-Bibliothek/blob/main/Anwenderkataloge/Grundschutz%2B%2B/Grundschutz%2B%2B-catalog.json"
+               aria-label="OSCAL JSON URL" />
+      </div>
+      <button id="loadBtn" class="btn primary">Laden</button>
+      <button id="uploadBtn" class="btn">JSON hochladen</button>
+      <input id="file" type="file" accept=".json,application/json" style="display:none" />
+    </div>
+  </div>
+
+  <div class="meta">
+    <span class="pill"><strong>Status</strong> <span id="status">bereit</span></span>
+    <span class="pill"><strong>Dokument</strong> <span id="docTitle">—</span></span>
+    <span class="pill"><strong>OSCAL</strong> <span id="oscalVersion">—</span></span>
+    <span class="pill"><strong>Version</strong> <span id="docVersion">—</span></span>
+    <span class="pill"><strong>Last modified</strong> <span id="lastModified">—</span></span>
+    <span class="pill"><strong>Quelle</strong> <a id="sourceLink" href="#" target="_blank" rel="noreferrer">—</a></span>
+    <span class="pill"><strong>Visible</strong> <span id="visibleCount">—</span></span>
+    <span class="pill"><strong>Selected</strong> <span id="selectedCount">0</span></span>
+    <span class="pill"><strong>Broken</strong> <span id="brokenCount">—</span></span>
+
+    <span class="spacer"></span>
+
+    <button id="helpBtn" class="btn">Query Help</button>
+    <button id="dashBtn" class="btn">Dashboard</button>
+    <button id="wsBtn" class="btn">Workspace</button>
+  </div>
+</header>
+
+<div class="row">
+  <aside>
+    <div class="pane">
+      <div class="stack">
+        <div>
+          <div class="label">Query Language (AND-Logik, Tokens mit <span class="mono">key:value</span>, optional <span class="mono">incoming&gt;5</span>)</div>
+          <div class="field">
+            <input id="query" type="search" placeholder='Beispiele: id:GC.2.* sec:hoch eff:2 has:broken  |  rel:references incoming>5  |  alias:facd...'
+                   spellcheck="false" />
+          </div>
+          <div class="small" id="queryHint">Tip: Drücke <span class="mono">/</span> für Fokus, <span class="mono">n</span>/<span class="mono">p</span> für Highlight‑Navigation.</div>
+        </div>
+
+        <div class="grid3">
+          <div>
+            <div class="label">sec_level</div>
+            <select id="secLevel" class="select">
+              <option value="">(alle)</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">effort_level</div>
+            <select id="effortLevel" class="select">
+              <option value="">(alle)</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">class</div>
+            <select id="classFilter" class="select">
+              <option value="">(alle)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <div class="label">Keyword enthält (optional)</div>
+            <div class="field">
+              <input id="keyword" type="search" placeholder="z. B. ISMS" list="kwList" />
+              <datalist id="kwList"></datalist>
+            </div>
+          </div>
+          <div>
+            <div class="label">Grouping & Sorting</div>
+            <div class="grid2">
+              <select id="groupMode" class="select" title="Group by">
+                <option value="oscal">Group: OSCAL</option>
+                <option value="sec_level">Group: sec_level</option>
+                <option value="effort_level">Group: effort_level</option>
+                <option value="class">Group: class</option>
+              </select>
+              <select id="sortBy" class="select" title="Sort by">
+                <option value="original">Sort: original</option>
+                <option value="id">Sort: ID</option>
+                <option value="title">Sort: Titel</option>
+                <option value="sec_level">Sort: sec_level</option>
+                <option value="effort_level">Sort: effort_level</option>
+                <option value="class">Sort: class</option>
+                <option value="incoming">Sort: incoming</option>
+                <option value="outgoing">Sort: outgoing</option>
+                <option value="broken">Sort: brokenLinks</option>
+              </select>
+            </div>
+            <div class="split" style="margin-top:8px;">
+              <button id="sortDirBtn" class="btn tgl small" aria-pressed="false" title="Sort descending">DESC</button>
+              <button id="clearBtn" class="btn danger small" title="Reset Filter & Query">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <div class="label">View</div>
+            <div class="split">
+              <button id="compactBtn" class="btn tgl" aria-pressed="false" title="Nur ID + Titel">Compact</button>
+              <button id="snippetBtn" class="btn tgl" aria-pressed="true" title="Statement-Snippet in der Liste">Snippets</button>
+            </div>
+          </div>
+          <div>
+            <div class="label">Selection</div>
+            <div class="split">
+              <button id="selModeBtn" class="btn tgl" aria-pressed="false" title="Checkboxen in der Navigation aktivieren">Selection mode</button>
+              <button id="selClearBtn" class="btn danger" title="Selection leeren">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="split">
+          <span class="count" id="count">0 / 0</span>
+          <span class="small">Deep‑Links: <span class="mono">#id=GC.1.1</span> · <span class="mono">#alias=&lt;uuid&gt;</span> · <span class="mono">#group=&lt;id&gt;</span> · <span class="mono">#param=&lt;pid&gt;&amp;id=&lt;cid&gt;</span> · <span class="mono">#rel=&lt;rel&gt;&amp;id=&lt;cid&gt;</span></span>
+        </div>
+
+        <div class="tree" id="tree" role="tree" aria-label="Katalog Baum"></div>
+
+        <div class="help" id="miniHelp">
+          <div style="font-weight:650; color:var(--text); margin-bottom:6px;">Quick Syntax</div>
+          <div><code>id:GC.2.*</code> <span class="muted">Wildcard</span> · <code>sec:hoch</code> · <code>eff:2</code> · <code>class:technical</code></div>
+          <div><code>has:broken</code> · <code>has:unreferenced</code> · <code>incoming&gt;5</code> · <code>rel:related</code> · <code>alias:&lt;uuid&gt;</code></div>
+          <div><code>"quoted text"</code> für Phrasen · <code>-has:broken</code> Negation</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="pane">
+      <div class="tabbar" id="tabbar">
+        <button class="tab active" data-tab="detail">Detail</button>
+        <button class="tab" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="selected">Selected</button>
+        <button class="tab" data-tab="mapping">Mapping</button>
+        <button class="tab" data-tab="lint">Lint</button>
+        <button class="tab" data-tab="diff">Diff</button>
+        <button class="tab" data-tab="resources">Resources</button>
+        <button class="tab" data-tab="review">Review</button>
+        <button class="tab" data-tab="workspace">Workspace</button>
+        <span class="spacer"></span>
+        <button id="prevHlBtn" class="btn small" title="Prev highlight (p)" disabled>◀</button>
+        <button id="nextHlBtn" class="btn small" title="Next highlight (n)" disabled>▶</button>
+        <span class="pill"><strong>HL</strong> <span id="hlCount">0</span></span>
+      </div>
+
+      <div id="panel-detail" class="panel">
+        <div id="detail" class="empty">
+          <div style="font-size:14px; margin-bottom:6px;">Noch nichts ausgewählt.</div>
+          <div class="small">Klicke links eine Control an oder lade ein JSON.</div>
+        </div>
+      </div>
+
+      <div id="panel-dashboard" class="panel" hidden>
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Dashboard / Visualizations</div>
+              <div class="small">Verteilungen, Hubs, Broken Links, Near-Duplicates, Scatter incoming/outgoing.</div>
+            </div>
+            <div class="split">
+              <select id="dashScope" class="select" title="Scope für Dashboard">
+                <option value="all">Scope: All controls</option>
+                <option value="visible">Scope: Visible (Filter)</option>
+                <option value="selected">Scope: Selected set</option>
+              </select>
+              <button id="dashRefreshBtn" class="btn">Refresh</button>
+              <label class="small" style="display:flex; align-items:center; gap:8px;">dup-thr <input id="dupThr" type="number" min="0" max="1" step="0.01" style="width:86px;" /></label>
+              <button id="dupBtn" class="btn">Near-duplicates</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="cardGrid">
+          <div class="card">
+            <h4>sec_level distribution</h4>
+            <div id="chartSec" class="bars"></div>
+          </div>
+          <div class="card">
+            <h4>effort_level distribution</h4>
+            <div id="chartEff" class="bars"></div>
+          </div>
+          <div class="card">
+            <h4>class distribution</h4>
+            <div id="chartClass" class="bars"></div>
+          </div>
+          <div class="card">
+            <h4>Top groups (approx. by first group path)</h4>
+            <div id="chartGroups" class="bars"></div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="cardGrid">
+          <div class="card">
+            <h4>Incoming/Outgoing quantiles</h4>
+            <div id="quantiles" class="small"></div>
+            <div style="height:10px"></div>
+            <div class="small">Top hubs (incoming)</div>
+            <table class="table" id="hubsTable">
+              <thead><tr><th>Control</th><th>Incoming</th><th>Outgoing</th><th>Titel</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h4>Scatter: incoming vs outgoing</h4>
+            <div class="small" style="margin-bottom:8px;">Hover für Tooltip. Klick auf Punkt: öffnet Control.</div>
+            <canvas id="scatter" style="width:100%; height:320px; border:1px solid rgba(36,48,65,.75); border-radius:14px; background: rgba(0,0,0,.12);"></canvas>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <h4>Broken links</h4>
+          <div class="small" style="margin-bottom:8px;">Outgoing Links, die nicht auflösbar sind (Control / Resource / Alias).</div>
+          <table class="table" id="brokenTable">
+            <thead><tr><th>From</th><th>rel</th><th>href</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <h4>Near-duplicates (TF‑IDF light)</h4>
+          <div class="small" style="margin-bottom:8px;">Berechnung gruppiert nach Top‑Terms und prüft Cosine‑Similarity.</div>
+          <div id="dupOut" class="small">Noch nicht berechnet. Klick auf “Near-duplicates”.</div>
+        </div>
+      </div>
+
+      <div id="panel-selected" class="panel" hidden>
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Selected set</div>
+              <div class="small">Export als OSCAL Profile Skeleton oder Mini-Catalog.</div>
+            </div>
+            <div class="split">
+              <button id="exportProfileBtn" class="btn primary">Export Profile (JSON)</button>
+              <button id="exportMiniCatBtn" class="btn">Export Mini‑Catalog (JSON)</button>
+              <button id="copySelBtn" class="btn">Copy IDs</button>
+              <button id="exportSelCsvBtn" class="btn">Export CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between;">
+            <div class="small">Selected controls: <span id="selCount2">0</span></div>
+            <div class="small" style="margin-top:6px;">
+              Bulk:
+              <select id="bulkReviewState" class="select" style="width:auto; display:inline-block; margin-left:6px;">
+                <option value="">(review state…)</option>
+                <option value="unreviewed">unreviewed</option>
+                <option value="reviewed">reviewed</option>
+                <option value="needs-work">needs-work</option>
+                <option value="blocked">blocked</option>
+              </select>
+              <button id="bulkApplyReviewBtn" class="btn small">Apply to selected</button>
+              <span style="margin-left:10px;"></span>
+              <input id="bulkAddTag" type="text" placeholder="add tag…" style="width:160px;" />
+              <button id="bulkApplyTagBtn" class="btn small">Add tag</button>
+            </div>
+
+            <div class="split">
+              <button id="selSelectVisibleBtn" class="btn small" title="Alle sichtbaren Controls zur Selection hinzufügen">Add visible</button>
+              <button id="selRemoveInvisibleBtn" class="btn small" title="IDs entfernen, die im aktuellen Katalog nicht existieren">Prune</button>
+            </div>
+          </div>
+          <div style="height:10px"></div>
+          <table class="table" id="selTable">
+            <thead><tr><th>Control</th><th>sec</th><th>eff</th><th>class</th><th>Titel</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="panel-mapping" class="panel" hidden>
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Mapping / Traceability</div>
+              <div class="small">Matrix und Pfadsuche über Relationships.</div>
+            </div>
+            <div class="split">
+              <select id="mapScope" class="select" title="Scope für Matrix">
+                <option value="selected">Scope: Selected</option>
+                <option value="visible">Scope: Visible</option>
+              </select>
+              <select id="mapRel" class="select" title="Relationship rel">
+                <option value="">rel: any</option>
+              </select>
+              <button id="mapRefreshBtn" class="btn">Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between;">
+            <div class="small">Relationship matrix (Controls → Controls). Tip: Scope klein halten (z. B. Selected).</div>
+            <div class="small" id="mapHint">—</div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="matrixWrap">
+            <table class="matrix" id="matrix"></table>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <div style="font-weight:700; margin-bottom:8px;">Trace path</div>
+          <div class="grid3">
+            <div>
+              <div class="label">From</div>
+              <select id="traceFrom" class="select"></select>
+            </div>
+            <div>
+              <div class="label">To</div>
+              <select id="traceTo" class="select"></select>
+            </div>
+            <div>
+              <div class="label">Max depth</div>
+              <select id="traceDepth" class="select">
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+          </div>
+          <div class="split" style="margin-top:10px;">
+            <select id="traceRel" class="select">
+              <option value="">rel: any</option>
+            </select>
+            <button id="traceBtn" class="btn primary">Find paths</button>
+            <span class="small" id="traceHint">—</span>
+          </div>
+          <div style="height:10px"></div>
+          <div id="traceOut" class="small">—</div>
+        </div>
+      </div>
+
+      <div id="panel-lint" class="panel" hidden>
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between;">
+            <div>
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">OSCAL Lint</div>
+              <div class="small">Qualitätschecks: IDs, Titles, Parts/Params, Links, Schema-Shapes.</div>
+            </div>
+            <div class="split">
+              <button id="lintRefreshBtn" class="btn">Re-run</button>
+              <select id="lintFilter" class="select" title="Filter">
+                <option value="">All</option>
+                <option value="error">Errors</option>
+                <option value="warn">Warnings</option>
+                <option value="info">Info</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between;">
+            <div class="small" id="lintSummary">—</div>
+            <div class="small">Klick auf Issue → springt zur Control (wenn möglich).</div>
+          </div>
+          <div style="height:10px"></div>
+          <table class="table" id="lintTable">
+            <thead><tr><th>Severity</th><th>Type</th><th>Control</th><th>Message</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="panel-diff" class="panel" hidden>
+        <div class="detailCard">
+          <div style="font-size:14px; font-weight:700; margin-bottom:6px;">Diff / Compare two catalogs</div>
+          <div class="small">Lade einen zweiten Catalog (B) und vergleiche mit dem aktuell geladenen (A).</div>
+          <div style="height:10px"></div>
+
+          <div class="grid2">
+            <div>
+              <div class="label">Catalog B URL (GitHub blob ok)</div>
+              <div class="field">
+                <input id="diffUrl" type="url" placeholder="https://github.com/.../blob/main/...json" spellcheck="false" />
+              </div>
+              <div class="split" style="margin-top:8px;">
+                <button id="diffLoadBtn" class="btn primary">Load B</button>
+                <button id="diffUploadBtn" class="btn">Upload B</button>
+                <input id="diffFile" type="file" accept=".json,application/json" style="display:none" />
+                <span class="small" id="diffStatus">B: not loaded</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="label">Diff filters</div>
+              <div class="split" style="margin-bottom:8px;">
+                <button class="btn tgl small" id="diffShowNew" aria-pressed="true">New</button>
+                <button class="btn tgl small" id="diffShowRemoved" aria-pressed="true">Removed</button>
+                <button class="btn tgl small" id="diffShowChanged" aria-pressed="true">Changed</button>
+              </div>
+              <div class="field">
+                <input id="diffSearch" type="search" placeholder="Search diff by id/title…" />
+              </div>
+              <div class="small" style="margin-top:8px;" id="diffSummary">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="cardGrid">
+          <div class="detailCard">
+            <div class="small" style="margin-bottom:8px;">Diff list</div>
+            <table class="table" id="diffTable">
+              <thead><tr><th>Type</th><th>Control</th><th>Changes</th><th>Title</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="detailCard">
+            <div class="small" style="margin-bottom:8px;">Diff detail</div>
+            <div id="diffDetail" class="small">Wähle links einen Eintrag aus.</div>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="panel-resources" class="panel" hidden>
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Resources (back-matter)</div>
+              <div class="small">Browse <span class="mono">back-matter.resources</span>, see who references them, and open raw details.</div>
+            </div>
+            <div class="split">
+              <button id="resExportCsvBtn" class="btn">Export CSV</button>
+            </div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="grid3">
+            <div style="grid-column:1/3;">
+              <div class="label">Search</div>
+              <div class="field"><input id="resSearch" type="text" placeholder="uuid, title, href…" /></div>
+            </div>
+            <div>
+              <div class="label">Show</div>
+              <select id="resShow" class="select">
+                <option value="all">All</option>
+                <option value="referenced">Referenced only</option>
+                <option value="unreferenced">Unreferenced only</option>
+              </select>
+            </div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="small">Resources: <span id="resCount">0</span></div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <table class="table" id="resTable">
+            <thead><tr><th>UUID</th><th>Title</th><th>Links</th><th>Refs</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard" id="resDetailCard" hidden>
+          <div class="split" style="justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Resource detail</div>
+              <div class="small mono" id="resDetailId">—</div>
+            </div>
+            <div class="split">
+              <button id="resOpenDeepLinkBtn" class="btn small">Copy deep-link</button>
+              <button id="resDetailCloseBtn" class="btn small">Close</button>
+            </div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="kv">
+            <div class="k">Title</div><div class="v" id="resDetailTitle">—</div>
+            <div class="k">Links</div><div class="v" id="resDetailLinks">—</div>
+            <div class="k">Citation</div><div class="v" id="resDetailCitation">—</div>
+            <div class="k">Referenced by</div><div class="v" id="resDetailRefs">—</div>
+            <div class="k">Raw</div><div class="v"><pre class="code" id="resDetailRaw"></pre></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-review" class="panel" hidden>
+        <div class="detailCard">
+          <div class="split" style="justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Review mode</div>
+              <div class="small">Local-only review workflow: review states, reviewer, timestamps, summary + exports.</div>
+            </div>
+            <div class="split">
+              <button id="reviewExportCsvBtn" class="btn">Export CSV</button>
+              <button id="reviewExportMdBtn" class="btn primary">Export report (MD)</button>
+            </div>
+          </div>
+          <div style="height:10px"></div>
+          <div id="reviewSummary" class="small muted">—</div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <div class="grid3">
+            <div>
+              <div class="label">Filter</div>
+              <select id="reviewFilter" class="select">
+                <option value="all">All</option>
+                <option value="unreviewed">Unreviewed</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="needs-work">Needs work</option>
+                <option value="blocked">Blocked</option>
+              </select>
+            </div>
+            <div style="grid-column:2/4;">
+              <div class="label">Search</div>
+              <div class="field"><input id="reviewSearch" type="text" placeholder="id, title, tags, reviewer…" /></div>
+            </div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="small">Controls in view: <span id="reviewCount">0</span></div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <table class="table" id="reviewTable">
+            <thead><tr><th>Control</th><th>Review</th><th>Reviewer</th><th>Date</th><th>Status</th><th>Tags</th><th>broken</th><th>Title</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+<div id="panel-workspace" class="panel" hidden>
+        <div class="detailCard">
+          <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Workspace</div>
+          <div class="small">Persistenz via localStorage: UI‑Prefs, expand/collapse, Selection, Notes/Status, Evidence‑Links.</div>
+          <div style="height:10px"></div>
+          <div class="split">
+            <button id="wsExportBtn" class="btn primary">Export workspace (JSON)</button>
+            <button id="wsImportBtn" class="btn">Import workspace</button>
+            <input id="wsFile" type="file" accept=".json,application/json" style="display:none" />
+            <button id="wsClearBtn" class="btn danger">Clear workspace</button>
+            <span class="small" id="wsInfo">—</span>
+          </div>
+          <div style="height:10px"></div>
+          <div class="help">
+            <div style="font-weight:650; color:var(--text); margin-bottom:6px;">Was wird gespeichert?</div>
+            <div>• Letzte URL / active tab / active control / Filter / Query / View / Sort / Group mode</div>
+            <div>• Expand/collapse Zustand (OSCAL-tree)</div>
+            <div>• Selection set</div>
+            <div>• Pro Control: status/tags/notes/decision/date + evidence links</div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Offline cache (IndexedDB)</div>
+          <div class="small">Optional local cache for faster reloads + offline usage. Keyed by the raw URL.</div>
+          <div style="height:10px"></div>
+
+          <div class="grid3">
+            <div>
+              <div class="label">Policy</div>
+              <select id="cachePolicy" class="select">
+                <option value="network">Network first</option>
+                <option value="prefer">Prefer cache (then update)</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">Default reviewer name</div>
+              <div class="field"><input id="reviewerName" type="text" placeholder="e.g. Masoumeh" /></div>
+            </div>
+            <div>
+              <div class="label">Actions</div>
+              <div class="split">
+                <button id="cacheRefreshBtn" class="btn small">Refresh</button>
+                <button id="cacheClearBtn" class="btn danger small">Clear cache</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+          <div class="small">Cache entries: <span id="cacheInfo">—</span></div>
+          <div style="height:10px"></div>
+          <table class="table" id="cacheTable">
+            <thead><tr><th>Source</th><th>Saved</th><th>Controls</th><th>Size</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="detailCard">
+          <div style="font-weight:700; margin-bottom:8px;">Workspace JSON preview (read-only)</div>
+          <pre id="wsPreview" class="code" style="max-height: 420px;"></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Help modal -->
+<div class="modal" id="helpModal">
+  <div class="modalCard">
+    <div class="modalTop">
+      <div>
+        <div style="font-weight:800;">Query Language Help</div>
+        <div class="small">Alles wird als AND verknüpft; Tokens können negiert werden (<span class="mono">-token</span>).</div>
+      </div>
+      <button class="btn" id="helpCloseBtn">Schließen</button>
+    </div>
+    <div class="modalBody">
+      <div class="help">
+        <div style="font-weight:750; color:var(--text); margin-bottom:8px;">Syntax</div>
+        <div><code>id:GC.2.*</code> (Wildcards: <code>*</code>, <code>?</code>)</div>
+        <div><code>sec:hoch</code> / <code>eff:2</code> / <code>class:technical</code></div>
+        <div><code>rel:related</code> (Outgoing links mit rel)</div>
+        <div><code>incoming&gt;5</code> / <code>outgoing&gt;=2</code></div>
+        <div><code>has:broken</code> | <code>has:statement</code> | <code>has:guidance</code> | <code>has:links</code> | <code>has:unreferenced</code></div>
+        <div><code>alias:&lt;uuid&gt;</code> (alt-identifier → Control)</div>
+        <div><code>"quoted phrase"</code> (Phrasen)</div>
+        <div><code>-has:broken</code> (Negation)</div>
+
+        <div style="height:10px"></div>
+        <div style="font-weight:750; color:var(--text); margin-bottom:8px;">Beispiele</div>
+        <div><code>id:GC.2.* sec:hoch eff:2 has:broken</code></div>
+        <div><code>rel:references incoming&gt;5</code></div>
+        <div><code>"Zertifikatsmonitoring" -has:broken</code></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="help">
+        <div style="font-weight:750; color:var(--text); margin-bottom:8px;">Shortcuts</div>
+        <div><span class="mono">/</span> Fokus auf Query</div>
+        <div><span class="mono">n</span>/<span class="mono">p</span> Next/Prev Highlight (wenn Detail aktiv)</div>
+        <div><span class="mono">Esc</span> schließt Modals</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+/* ============================
+   Grundschutz++ OSCAL Viewer v5-final
+   - Query language
+   - Highlighting + jump
+   - Sorting/grouping + deep-links
+   - localStorage workspace export/import
+   - Selection/Profile/Mini-catalog export
+   - Mapping matrix + trace path
+   - alt-identifier alias resolution
+   - Lint + Diff
+   - Dashboard visualizations + TF-IDF light near-duplicates
+   - Notes/Tags/Status + Evidence links
+   ============================ */
+
+/* ---------- Small helpers ---------- */
+const $ = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
+const uniq = (arr)=>Array.from(new Set(arr));
+const nowISO = ()=> new Date().toISOString().slice(0,10);
+
+/* ---------- Toast ---------- */
+let toastTimer = null;
+function toast(msg, ms=2200){
+  const t = $("#toast");
+  t.innerHTML = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), ms);
+}
+
+/* ---------- GitHub blob → raw ---------- */
+function toRaw(url){
+  try{
+    const u = new URL(url);
+    if(u.hostname==="github.com"){
+      // /org/repo/blob/branch/path -> https://raw.githubusercontent.com/org/repo/branch/path
+      const parts = u.pathname.split("/").filter(Boolean);
+      if(parts.length>=5 && parts[2]==="blob"){
+        const org=parts[0], repo=parts[1], branch=parts[3];
+        const rest=parts.slice(4).join("/");
+        return `https://raw.githubusercontent.com/${org}/${repo}/${branch}/${rest}`;
+      }
+    }
+  }catch(_){}
+  return url;
+}
+
+/* ---------- Workspace (localStorage) ---------- */
+const WS_KEY = "gspp_oscal_workspace_v5";
+const defaultWS = ()=>({
+  version: 5,
+  lastUrl: "",
+  lastHash: "",
+  ui: {
+    activeTab: "detail",
+    compact: false,
+    showSnippets: true,
+    selectionMode: false,
+    groupMode: "oscal",
+    sortBy: "original",
+    sortDesc: false,
+    secLevel: "",
+    effortLevel: "",
+    classFilter: "",
+    keyword: "",
+    query: "",
+    cachePolicy: "network",
+    reviewerName: "",
+    nearDupThreshold: 0.82
+  },
+  expanded: {}, // key->bool
+  selection: [], // array of control IDs
+  notes: {
+    // id: { status:"todo|accepted|not-applicable|needs-clarification|", tags:["..."], notes:"...", decision:"...", date:"YYYY-MM-DD", evidence:[{label,url}] }
+  }
+});
+
+let WS = loadWS();
+function loadWS(){
+  try{
+    let raw = localStorage.getItem(WS_KEY);
+    // v5 migration: if no v5 workspace yet, try v4 key
+    if(!raw && WS_KEY !== "gspp_oscal_workspace_v4"){
+      raw = localStorage.getItem("gspp_oscal_workspace_v4");
+    }
+    if(!raw) return defaultWS();
+    const obj = JSON.parse(raw);
+    return deepMerge(defaultWS(), obj);
+  }catch(_){
+    return defaultWS();
+  }
+}
+function saveWS(){
+  try{
+    WS.lastHash = location.hash || "";
+    localStorage.setItem(WS_KEY, JSON.stringify(WS));
+    updateWSPreview();
+  }catch(_){}
+}
+function clearWS(){
+  WS = defaultWS();
+  saveWS();
+}
+function deepMerge(base, patch){
+  if(Array.isArray(base)) return Array.isArray(patch)? patch : base;
+  if(base && typeof base==="object"){
+    const out = {...base};
+    if(patch && typeof patch==="object"){
+      for(const [k,v] of Object.entries(patch)){
+        if(k in out) out[k]=deepMerge(out[k], v);
+        else out[k]=v;
+      }
+    }
+    return out;
+  }
+  return (patch!==undefined) ? patch : base;
+}
+
+/* ---------- Data model ---------- */
+let CATALOG_A = null; // current
+let CATALOG_B = null; // for diff
+
+let IDX = null; // built index for current catalog
+let FILTERED = []; // visible controls list (flat)
+let ACTIVE_ID = null;
+let ACTIVE_GROUP = null;
+let ACTIVE_PARAM = null;
+let ACTIVE_REL = null; // {rel, fromId}
+
+let HL = { list: [], idx: -1 }; // highlight marks in detail view
+
+/* ---------- OSCAL parsing (robust-ish) ---------- */
+function getCatalogRoot(json){
+  // Some files might be {catalog:{...}} or already a catalog.
+  if(json?.catalog) return json.catalog;
+  if(json?.["catalog"] && typeof json["catalog"]==="object") return json["catalog"];
+  return json;
+}
+
+function getProps(node){
+  const props = node?.props || node?.prop || [];
+  if(Array.isArray(props)) return props;
+  return [];
+}
+function propVal(node, name){
+  const p = getProps(node).find(x=> (x?.name||x?.[0])===name);
+  return p ? (p.value ?? p.val ?? p["#text"] ?? p?.[1] ?? "") : "";
+}
+
+function collectControls(groups, groupPath=[]){
+  const out = [];
+  if(!Array.isArray(groups)) return out;
+  for(const g of groups){
+    const gid = g?.id || "";
+    const gtitle = g?.title || "";
+    const path = [...groupPath, {id:gid,title:gtitle}];
+    const ctrls = Array.isArray(g?.controls)? g.controls : [];
+    for(const c of ctrls){
+      out.push({control:c, groupPath:path, group:g});
+    }
+    out.push(...collectControls(g?.groups, path));
+  }
+  return out;
+}
+
+function textFromParts(parts){
+  if(!Array.isArray(parts)) return "";
+  let acc = "";
+  for(const p of parts){
+    if(typeof p==="string"){ acc += p + "\n"; continue; }
+    if(p?.prose) acc += p.prose + "\n";
+    if(p?.parts) acc += textFromParts(p.parts) + "\n";
+  }
+  return acc.trim();
+}
+
+function extractStatementsAndGuidance(control){
+  const parts = control?.parts || control?.part || [];
+  if(!Array.isArray(parts)) return {statement:"", guidance:""};
+  // Heuristic: parts with name "statement" vs "guidance" (common in catalogs)
+  let statementParts = parts.filter(p=> (p?.name||"").toLowerCase()==="statement");
+  let guidanceParts  = parts.filter(p=> (p?.name||"").toLowerCase()==="guidance");
+  // Fallback: first part is statement, second guidance
+  if(statementParts.length===0 && parts.length>0) statementParts=[parts[0]];
+  if(guidanceParts.length===0 && parts.length>1) guidanceParts=[parts[1]];
+  const statement = textFromParts(statementParts);
+  const guidance = textFromParts(guidanceParts);
+  return {statement, guidance};
+}
+
+function extractParams(control){
+  const params = control?.params || control?.param || [];
+  if(!Array.isArray(params)) return [];
+  return params.map(p=>({
+    id: p?.id || "",
+    label: p?.label || p?.name || "",
+    values: Array.isArray(p?.values) ? p.values : (Array.isArray(p?.value)? p.value : []),
+    select: p?.select || null
+  })).filter(p=>p.id);
+}
+
+function extractLinks(control){
+  const links = control?.links || control?.link || [];
+  if(!Array.isArray(links)) return [];
+  return links.map(l=>({
+    rel: l?.rel || "",
+    href: l?.href || "",
+    text: l?.text || l?.label || ""
+  })).filter(l=>l.href || l.rel);
+}
+
+function extractAltIds(control){
+  // alt-identifier may appear as props or as a custom structure. We'll attempt:
+  // 1) props name="alt-identifier" value=...
+  // 2) props name="alt-id"/"alt_id"/"uuid"/"identifier"
+  // 3) control.uuid if present
+  const props = getProps(control);
+  const candidates = [];
+  for(const p of props){
+    const n = (p?.name||"").toLowerCase();
+    const v = String(p?.value ?? "");
+    if(!v) continue;
+    if(n==="alt-identifier" || n==="alt_identifier" || n==="alt-id" || n==="alt_id" || n==="uuid" || n==="identifier"){
+      candidates.push(v);
+    }
+  }
+  if(control?.uuid) candidates.push(String(control.uuid));
+  if(control?.["alt-identifier"]) candidates.push(String(control["alt-identifier"]));
+  return uniq(candidates).filter(Boolean);
+}
+
+/* ---------- Build index ---------- */
+function buildIndex(json){
+  const cat = getCatalogRoot(json);
+  const md = cat?.metadata || {};
+  const groups = cat?.groups || [];
+  const flat = collectControls(groups, []);
+  const controls = [];
+  const byId = new Map();
+  const byAlias = new Map(); // alias -> id
+  const relSet = new Set();
+
+  for(const item of flat){
+    const c = item.control;
+    const id = c?.id || "";
+    if(!id) continue;
+    const title = c?.title || "";
+    const sec_level = propVal(c, "sec_level") || propVal(c, "sec") || "";
+    const effort_level = propVal(c, "effort_level") || propVal(c, "effort") || "";
+    const cls = propVal(c, "class") || propVal(c, "klass") || "";
+    const {statement, guidance} = extractStatementsAndGuidance(c);
+    const params = extractParams(c);
+    const links = extractLinks(c);
+    for(const l of links){ if(l.rel) relSet.add(l.rel); }
+
+    const altIds = extractAltIds(c);
+    for(const a of altIds){ if(a && !byAlias.has(a)) byAlias.set(a, id); }
+
+    const obj = {
+      id, title, sec_level, effort_level, class: cls,
+      statement, guidance, params, links,
+      groupPath: item.groupPath,
+      groupId: item.group?.id || "",
+      groupTitle: item.group?.title || "",
+      raw: c,
+      altIds
+    };
+    controls.push(obj);
+    byId.set(id, obj);
+  }
+
+  // Resources/back-matter may include UUIDs referenced by hrefs
+  const resources = new Map();
+  const bm = cat?.back_matter || cat?.backMatter || cat?.["back-matter"] || {};
+  const resArr = bm?.resources || bm?.resource || [];
+  if(Array.isArray(resArr)){
+    for(const r of resArr){
+      const rid = r?.uuid || r?.id || "";
+      if(!rid) continue;
+      resources.set(rid, r);
+      // also index resource UUID as alias if helpful
+      if(!byAlias.has(rid)) byAlias.set(rid, `resource:${rid}`);
+    }
+  }
+
+  // Relationship graph: outgoing links from control to "targets"
+  // Targets can be:
+  // - another control id
+  // - alt id that resolves to a control id
+  // - resource uuid
+  // - unknown/broken
+  const outgoing = new Map(); // id -> array of {rel, href, targetType, targetId}
+  const incoming = new Map(); // id -> array of {fromId, rel, href}
+  const broken = []; // {fromId, rel, href}
+
+  function resolveHref(href){
+    if(!href) return {type:"unknown", id:""};
+    // OSCAL commonly uses "#something" or plain ID or UUID
+    const h = href.replace(/^#/, "");
+    if(byId.has(h)) return {type:"control", id:h};
+    if(byAlias.has(h)){
+      const mapped = byAlias.get(h);
+      if(mapped?.startsWith("resource:")) return {type:"resource", id:mapped.slice(9)};
+      if(byId.has(mapped)) return {type:"control", id:mapped};
+    }
+    if(resources.has(h)) return {type:"resource", id:h};
+    return {type:"broken", id:h};
+  }
+
+  for(const c of controls){
+    const outs = [];
+    for(const l of c.links){
+      const res = resolveHref(l.href);
+      const rec = {rel:l.rel||"", href:l.href||"", targetType:res.type, targetId:res.id};
+      outs.push(rec);
+      if(res.type==="control" && byId.has(res.id)){
+        if(!incoming.has(res.id)) incoming.set(res.id, []);
+        incoming.get(res.id).push({fromId: c.id, rel: l.rel||"", href: l.href||""});
+      }else if(res.type==="broken"){
+        broken.push({fromId:c.id, rel:l.rel||"", href:l.href||""});
+      }
+    }
+    outgoing.set(c.id, outs);
+  }
+
+  // Precompute counts
+  const counts = new Map();
+  for(const c of controls){
+    const inc = incoming.get(c.id)?.length || 0;
+    const out = outgoing.get(c.id)?.length || 0;
+    const bro = outgoing.get(c.id)?.filter(x=>x.targetType==="broken").length || 0;
+    counts.set(c.id, {incoming:inc, outgoing:out, broken:bro});
+  }
+
+  // Unique values for filters
+  const secVals = uniq(controls.map(c=>c.sec_level).filter(Boolean)).sort();
+  const effVals = uniq(controls.map(c=>String(c.effort_level)).filter(Boolean)).sort((a,b)=>a.localeCompare(b, undefined, {numeric:true}));
+  const clsVals = uniq(controls.map(c=>c.class).filter(Boolean)).sort();
+  const keywords = buildKeywordSuggestions(controls);
+
+  return {
+    cat, metadata: md,
+    controls, byId, byAlias,
+    resources,
+    outgoing, incoming, broken, counts,
+    secVals, effVals, clsVals, relVals: Array.from(relSet).sort(),
+    keywords
+  };
+}
+
+function buildKeywordSuggestions(controls){
+  const freq = new Map();
+  const stop = new Set(["und","oder","der","die","das","ein","eine","mit","für","von","in","im","auf","an","zu","ist","sind","nicht","den","des","dem","bei","als","auch","nur","mehr","weniger","kann","soll","muss","müssen","können","sollen","werden","wird","durch","this","that","the","and","or","to","of","in","on","for","with","as","be","are","is"]);
+  for(const c of controls){
+    const txt = `${c.title} ${c.statement} ${c.guidance}`.toLowerCase();
+    const words = txt.split(/[^a-z0-9äöüß]+/i).filter(w=>w.length>=4 && !stop.has(w));
+    for(const w of words){
+      freq.set(w, (freq.get(w)||0)+1);
+    }
+  }
+  const top = Array.from(freq.entries()).sort((a,b)=>b[1]-a[1]).slice(0,120).map(x=>x[0]);
+  return top;
+}
+
+/* ---------- Query language ---------- */
+function tokenizeQuery(q){
+  // supports quoted phrases and plain tokens separated by whitespace
+  const tokens = [];
+  const re = /"([^"]+)"|(\S+)/g;
+  let m;
+  while((m=re.exec(q||""))){
+    tokens.push(m[1] ? `"${m[1]}"` : m[2]);
+  }
+  return tokens;
+}
+function wildToRegex(pat){
+  // escape regex, then replace * and ?
+  const s = String(pat);
+  const escd = s.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+  const r = "^" + escd.replace(/\*/g, ".*").replace(/\?/g, ".") + "$";
+  return new RegExp(r, "i");
+}
+function parseToken(tok){
+  let neg=false;
+  let t = tok;
+  if(t.startsWith("-")){ neg=true; t=t.slice(1); }
+  // quoted phrase => text search
+  if(t.startsWith('"') && t.endsWith('"') && t.length>=2){
+    return {type:"text", key:"phrase", op:"contains", value:t.slice(1,-1), neg};
+  }
+
+  // comparators e.g. incoming>=5
+  const cmp = t.match(/^([a-zA-Z_]+)\s*(>=|<=|=|>|<)\s*([0-9]+)$/);
+  if(cmp){
+    return {type:"num", key:cmp[1].toLowerCase(), op:cmp[2], value: parseInt(cmp[3],10), neg};
+  }
+
+  // key:value
+  const kv = t.match(/^([a-zA-Z_]+):(.*)$/);
+  if(kv){
+    return {type:"kv", key:kv[1].toLowerCase(), op:"=", value:kv[2], neg};
+  }
+
+  // default: text contains
+  return {type:"text", key:"contains", op:"contains", value:t, neg};
+}
+
+function evalToken(token, c, counts){
+  const textAll = `${c.id} ${c.title} ${c.statement} ${c.guidance}`.toLowerCase();
+  const val = (x)=>String(x??"").toLowerCase();
+
+  let ok=true;
+
+  if(token.type==="text"){
+    if(token.key==="phrase"){
+      ok = textAll.includes(String(token.value).toLowerCase());
+    }else{
+      ok = textAll.includes(String(token.value).toLowerCase());
+    }
+  }else if(token.type==="num"){
+    const n = counts?.[token.key] ?? 0;
+    const v = token.value;
+    switch(token.op){
+      case ">": ok = n>v; break;
+      case "<": ok = n<v; break;
+      case ">=": ok = n>=v; break;
+      case "<=": ok = n<=v; break;
+      case "=": ok = n===v; break;
+      default: ok=true;
+    }
+  }else if(token.type==="kv"){
+    const k = token.key;
+    const vRaw = token.value;
+    const v = val(vRaw);
+
+    if(k==="id"){
+      ok = wildToRegex(vRaw).test(c.id);
+    }else if(k==="sec" || k==="sec_level"){
+      ok = val(c.sec_level)===v;
+    }else if(k==="eff" || k==="effort" || k==="effort_level"){
+      ok = val(c.effort_level)===v;
+    }else if(k==="class"){
+      ok = val(c.class)===v;
+    }else if(k==="title"){
+      ok = val(c.title).includes(v);
+    }else if(k==="text"){
+      ok = textAll.includes(v);
+    }else if(k==="rel"){
+      // outgoing has a link with rel (any)
+      ok = c.links.some(l=>val(l.rel)===v);
+    }else if(k==="has"){
+      if(v==="broken"){
+        ok = (counts?.broken||0) > 0;
+      }else if(v==="links"){
+        ok = (counts?.outgoing||0) > 0;
+      }else if(v==="statement"){
+        ok = (c.statement||"").trim().length>0;
+      }else if(v==="guidance"){
+        ok = (c.guidance||"").trim().length>0;
+      }else if(v==="unreferenced"){
+        ok = (counts?.incoming||0)===0;
+      }else{
+        ok = true;
+      }
+    }else if(k==="alias"){
+      // resolve alias to control id
+      const mapped = IDX?.byAlias?.get(vRaw) || IDX?.byAlias?.get(vRaw.replace(/^#/, ""));
+      ok = mapped===c.id;
+    }else{
+      // fallback: contains in any text
+      ok = textAll.includes(v);
+    }
+  }
+
+  if(token.neg) ok = !ok;
+  return ok;
+}
+
+function applyQueryLanguage(list){
+  const q = ($("#query").value || "").trim();
+  if(!q) return list;
+  const tokens = tokenizeQuery(q).map(parseToken);
+  return list.filter(c=>{
+    const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
+    return tokens.every(t=>evalToken(t, c, counts));
+  });
+}
+
+/* ---------- Filtering ---------- */
+function applyFilters(){
+  if(!IDX) return;
+
+  const sec = $("#secLevel").value;
+  const eff = $("#effortLevel").value;
+  const cls = $("#classFilter").value;
+  const kw  = ($("#keyword").value||"").trim().toLowerCase();
+
+  let list = IDX.controls.slice();
+
+  if(sec) list = list.filter(c => (c.sec_level||"")===sec);
+  if(eff) list = list.filter(c => String(c.effort_level||"")===String(eff));
+  if(cls) list = list.filter(c => (c.class||"")===cls);
+  if(kw){
+    list = list.filter(c=>{
+      const t = `${c.id} ${c.title} ${c.statement} ${c.guidance}`.toLowerCase();
+      return t.includes(kw);
+    });
+  }
+
+  list = applyQueryLanguage(list);
+
+  // sorting (flat list only; grouping will rebuild)
+  const sortBy = $("#sortBy").value;
+  const desc = $("#sortDirBtn").getAttribute("aria-pressed")==="true";
+  const getCount = (id)=>IDX.counts.get(id)||{incoming:0,outgoing:0,broken:0};
+  const cmpText=(a,b)=>String(a||"").localeCompare(String(b||""), undefined, {numeric:true, sensitivity:"base"});
+  const cmpNum=(a,b)=> (a-b);
+
+  if(sortBy && sortBy!=="original"){
+    list.sort((A,B)=>{
+      let r=0;
+      if(sortBy==="id") r=cmpText(A.id,B.id);
+      else if(sortBy==="title") r=cmpText(A.title,B.title);
+      else if(sortBy==="sec_level") r=cmpText(A.sec_level,B.sec_level);
+      else if(sortBy==="effort_level") r=cmpText(A.effort_level,B.effort_level);
+      else if(sortBy==="class") r=cmpText(A.class,B.class);
+      else if(sortBy==="incoming") r=cmpNum(getCount(A.id).incoming, getCount(B.id).incoming);
+      else if(sortBy==="outgoing") r=cmpNum(getCount(A.id).outgoing, getCount(B.id).outgoing);
+      else if(sortBy==="broken") r=cmpNum(getCount(A.id).broken, getCount(B.id).broken);
+      return desc ? -r : r;
+    });
+  }
+
+  FILTERED = list;
+
+  $("#count").textContent = `${FILTERED.length} / ${IDX.controls.length}`;
+  $("#visibleCount").textContent = `${FILTERED.length}`;
+  $("#brokenCount").textContent = `${IDX.broken.length}`;
+
+  renderTree();
+  refreshDashboardIfOpen();
+  refreshSelectedPanelIfOpen();
+  refreshMappingIfOpen();
+  updateDeepLinkBadge();
+  saveUIToWS();
+}
+
+/* ---------- UI persistence helpers ---------- */
+function saveUIToWS(){
+  WS.ui.activeTab = currentTab();
+  WS.ui.compact = $("#compactBtn").getAttribute("aria-pressed")==="true";
+  WS.ui.showSnippets = $("#snippetBtn").getAttribute("aria-pressed")==="true";
+  WS.ui.selectionMode = $("#selModeBtn").getAttribute("aria-pressed")==="true";
+  WS.ui.groupMode = $("#groupMode").value;
+  WS.ui.sortBy = $("#sortBy").value;
+  WS.ui.sortDesc = $("#sortDirBtn").getAttribute("aria-pressed")==="true";
+  WS.ui.secLevel = $("#secLevel").value;
+  WS.ui.effortLevel = $("#effortLevel").value;
+  WS.ui.classFilter = $("#classFilter").value;
+  WS.ui.keyword = $("#keyword").value;
+  WS.ui.query = $("#query").value;
+  WS.selection = getSelection();
+  saveWS();
+}
+
+function restoreUIFromWS(){
+  const ui = WS.ui || {};
+  setToggle($("#compactBtn"), !!ui.compact);
+  setToggle($("#snippetBtn"), ui.showSnippets!==false);
+  setToggle($("#selModeBtn"), !!ui.selectionMode);
+  $("#groupMode").value = ui.groupMode || "oscal";
+  $("#sortBy").value = ui.sortBy || "original";
+  setToggle($("#sortDirBtn"), !!ui.sortDesc);
+  $("#secLevel").value = ui.secLevel || "";
+  $("#effortLevel").value = ui.effortLevel || "";
+  $("#classFilter").value = ui.classFilter || "";
+  $("#keyword").value = ui.keyword || "";
+  $("#query").value = ui.query || "";
+  if(ui.activeTab) setTab(ui.activeTab);
+}
+
+function setToggle(btn, on){
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+}
+
+function currentTab(){
+  const t = $(".tab.active");
+  return t ? t.dataset.tab : "detail";
+}
+function setTab(name){
+  $$(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  $$(".panel").forEach(p=>p.hidden = (p.id !== `panel-${name}`));
+  WS.ui.activeTab = name;
+  saveWS();
+  // refresh
+  if(name==="dashboard") refreshDashboard();
+  if(name==="selected") refreshSelectedPanel();
+  if(name==="mapping") refreshMapping();
+  if(name==="lint") refreshLint();
+  if(name==="diff") refreshDiffTable();
+  if(name==="workspace") updateWSPreview();
+}
+
+function updateWSPreview(){
+  const p = $("#wsPreview");
+  const info = $("#wsInfo");
+  if(!p) return;
+  p.textContent = JSON.stringify(WS, null, 2);
+  info.textContent = `workspace v${WS.version} · selection=${(WS.selection||[]).length} · notes=${Object.keys(WS.notes||{}).length} · expanded=${Object.keys(WS.expanded||{}).length}`;
+}
+
+/* ---------- Tree rendering ---------- */
+function groupKeyForControl(c){
+  const gm = $("#groupMode").value;
+  if(gm==="sec_level") return c.sec_level || "(none)";
+  if(gm==="effort_level") return String(c.effort_level || "(none)");
+  if(gm==="class") return c.class || "(none)";
+  // oscal grouping uses groupPath
+  return null;
+}
+
+function buildTreeModel(){
+  const gm = $("#groupMode").value;
+  if(gm==="oscal"){
+    // Build hierarchy from groupPath but include only visible controls
+    const root = {type:"root", id:"root", title:"root", children:[]};
+    const gmap = new Map(); // pathKey -> node
+    function getNodeForPath(path){
+      let key = "";
+      let parent = root;
+      for(const seg of path){
+        key += "/" + (seg.id||seg.title||"");
+        if(!gmap.has(key)){
+          const n = {type:"group", id:seg.id||key, title:seg.title||seg.id||"(group)", children:[]};
+          gmap.set(key, n);
+          parent.children.push(n);
+        }
+        parent = gmap.get(key);
+      }
+      return parent;
+    }
+    for(const c of FILTERED){
+      const node = getNodeForPath(c.groupPath||[]);
+      node.children.push({type:"control", id:c.id, control:c});
+    }
+    // Optionally sort group children by title
+    return root;
+  }
+
+  // flat grouping by property
+  const root = {type:"root", id:"root", title:"root", children:[]};
+  const buckets = new Map();
+  for(const c of FILTERED){
+    const k = groupKeyForControl(c);
+    if(!buckets.has(k)) buckets.set(k, {type:"group", id:`grp:${gm}:${k}`, title:k, children:[]});
+    buckets.get(k).children.push({type:"control", id:c.id, control:c});
+  }
+  // sort buckets by key
+  const arr = Array.from(buckets.values()).sort((a,b)=>a.title.localeCompare(b.title, undefined, {numeric:true}));
+  root.children = arr;
+  return root;
+}
+
+function renderTree(){
+  const el = $("#tree");
+  if(!el) return;
+  el.innerHTML = "";
+  if(!IDX){
+    el.innerHTML = `<div class="treeRow"><div class="nodeBody"><div class="ntitle">Kein Katalog geladen</div></div></div>`;
+    return;
+  }
+
+  const model = buildTreeModel();
+  const selectionMode = $("#selModeBtn").getAttribute("aria-pressed")==="true";
+  const compact = $("#compactBtn").getAttribute("aria-pressed")==="true";
+  const showSnippets = $("#snippetBtn").getAttribute("aria-pressed")==="true";
+
+  const rows = [];
+  function walk(node, depth){
+    if(node.type==="group" || node.type==="root"){
+      for(const ch of node.children){
+        walk(ch, depth + (node.type==="root"?0:1));
+      }
+      return;
+    }
+  }
+  // We'll render with a stack, preserving groups as collapsible
+  function renderNode(node, depth, parentKey){
+    if(node.type==="group"){
+      const key = `${parentKey}/${node.id}`;
+      const expanded = (WS.expanded[key]!==undefined) ? WS.expanded[key] : true;
+      const row = document.createElement("div");
+      row.className = "treeRow";
+      row.style.paddingLeft = `${10 + depth*14}px`;
+      row.dataset.kind = "group";
+      row.dataset.gid = node.id;
+      row.dataset.key = key;
+      row.innerHTML = `
+        <div class="caret">${expanded? "▾":"▸"}</div>
+        <div class="nodeBody">
+          <div class="nodeLine1">
+            <div class="ntitle">${esc(node.title)}</div>
+            <div class="badges">
+              <span class="badge">${node.children.length} controls</span>
+            </div>
+          </div>
+        </div>
+      `;
+      row.addEventListener("click", (e)=>{
+        if(e.target?.classList?.contains("selcb")) return;
+        WS.expanded[key] = !((WS.expanded[key]!==undefined)?WS.expanded[key]:true);
+        saveWS();
+        renderTree();
+      });
+      el.appendChild(row);
+      if(expanded){
+        for(const ch of node.children) renderNode(ch, depth+1, key);
+      }
+    }else if(node.type==="control"){
+      const c = node.control;
+      const counts = IDX.counts.get(c.id)||{incoming:0,outgoing:0,broken:0};
+      const row = document.createElement("div");
+      row.className = "treeRow" + (c.id===ACTIVE_ID ? " active":"");
+      row.style.paddingLeft = `${10 + depth*14}px`;
+      row.dataset.kind = "control";
+      row.dataset.id = c.id;
+
+      const cb = selectionMode ? `<input class="selcb" type="checkbox" ${isSelected(c.id)?"checked":""} aria-label="Select ${esc(c.id)}" />` : "";
+      const caret = `<div class="caret blank"></div>`;
+      const snippetText = (c.statement||"").trim().slice(0, 220).replace(/\s+/g," ");
+      const snippet = (!compact && showSnippets && snippetText) ? `<div class="nsnippet">${renderSnippetWithHighlights(snippetText)}</div>` : "";
+      const badges = [];
+      if(c.sec_level) badges.push(`<span class="badge k">sec:${esc(c.sec_level)}</span>`);
+      if(c.effort_level) badges.push(`<span class="badge w">eff:${esc(c.effort_level)}</span>`);
+      if(c.class) badges.push(`<span class="badge">${esc(c.class)}</span>`);
+      if(counts.broken>0) badges.push(`<span class="badge r">broken:${counts.broken}</span>`);
+      if(counts.incoming>0) badges.push(`<span class="badge">in:${counts.incoming}</span>`);
+      if(counts.outgoing>0) badges.push(`<span class="badge">out:${counts.outgoing}</span>`);
+
+      row.innerHTML = `
+        ${caret}
+        ${cb}
+        <div class="nodeBody">
+          <div class="nodeLine1">
+            <div class="nid">${esc(c.id)}</div>
+            <div class="ntitle">${esc(c.title||"(no title)")}</div>
+            <div class="badges">${badges.join("")}</div>
+          </div>
+          ${snippet}
+        </div>
+      `;
+
+      // clicking checkbox shouldn't open detail (but still update selection)
+      row.addEventListener("click", (e)=>{
+        const target = e.target;
+        if(target && target.classList.contains("selcb")){
+          toggleSelected(c.id, target.checked);
+          return;
+        }
+        openControl(c.id);
+      });
+
+      el.appendChild(row);
+    }
+  }
+
+  // Render root children
+  for(const child of model.children){
+    renderNode(child, 0, "root");
+  }
+
+  // Update selected count
+  $("#selectedCount").textContent = String(getSelection().length);
+}
+
+/* ---------- Snippet highlighting in list ---------- */
+function getHighlightTerms(){
+  // from query & keyword: only text tokens/phrases and free text
+  const terms = [];
+  const kw = ($("#keyword").value||"").trim();
+  if(kw) terms.push(kw);
+  const q = ($("#query").value||"").trim();
+  if(q){
+    const tokens = tokenizeQuery(q).map(parseToken);
+    for(const t of tokens){
+      if(t.neg) continue;
+      if(t.type==="text") terms.push(String(t.value));
+      if(t.type==="kv"){
+        if(["title","text"].includes(t.key)) terms.push(String(t.value));
+        if(t.key==="id") terms.push(String(t.value).replace(/\*/g,"").replace(/\?/g,""));
+      }
+    }
+  }
+  // reduce duplicates, remove tiny
+  return uniq(terms.map(x=>x.trim()).filter(x=>x.length>=3)).slice(0,10);
+}
+
+function renderSnippetWithHighlights(text){
+  const terms = getHighlightTerms();
+  if(terms.length===0) return esc(text);
+  let out = esc(text);
+  // Replace in safe escaped space: we need to highlight by inserting mark tags.
+  // Since the string is escaped, terms must be escaped too before regex.
+  for(const term of terms){
+    const safe = esc(term);
+    if(!safe) continue;
+    try{
+      const re = new RegExp(safe.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+      out = out.replace(re, (m)=>`<mark class="hl">${m}</mark>`);
+    }catch(_){}
+  }
+  return out;
+}
+
+/* ---------- Control detail rendering ---------- */
+function openControl(id){
+  if(!IDX?.byId?.has(id)){ toast(`Control ${esc(id)} nicht gefunden`, 2400); return; }
+  ACTIVE_ID = id;
+  ACTIVE_GROUP = null;
+  ACTIVE_PARAM = null;
+  ACTIVE_REL = null;
+  WS.lastHash = `#id=${encodeURIComponent(id)}`;
+  saveWS();
+  updateHash();
+  renderTree(); // update active highlight
+  renderDetail();
+  // keep tab on detail unless user is on another tab (do not force)
+  if(currentTab()==="detail"){
+    // keep
+  }
+}
+
+function updateHash(){
+  // avoid infinite loops: set hash only if changed
+  const desired = WS.lastHash || "";
+  if(location.hash !== desired) location.hash = desired;
+}
+
+function setStatus(s){ $("#status").textContent = s; }
+
+function renderDetail(){
+  const host = $("#detail");
+  if(!host) return;
+  if(!ACTIVE_ID){
+    host.className = "empty";
+    host.innerHTML = `<div style="font-size:14px; margin-bottom:6px;">Noch nichts ausgewählt.</div><div class="small">Klicke links eine Control an.</div>`;
+    return;
+  }
+  const c = IDX.byId.get(ACTIVE_ID);
+  const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
+
+  host.className = "detailCard";
+
+  // Notes workspace fields
+  const note = WS.notes[c.id] || {status:"", tags:[], notes:"", decision:"", date:"", evidence:[]};
+  const status = note.status || "";
+  const tags = (note.tags||[]).join(", ");
+  const decision = note.decision || "";
+  const date = note.date || "";
+
+  const statementHTML = linkifyParams(highlightProse(c.statement||""));
+  const guidanceHTML  = linkifyParams(highlightProse(c.guidance||""));
+
+  const incomingList = (IDX.incoming.get(c.id)||[]);
+  const outgoingList = (IDX.outgoing.get(c.id)||[]);
+
+  host.innerHTML = `
+    <div class="detailHeader">
+      <div>
+        <h2><span class="mono">${esc(c.id)}</span> — ${esc(c.title||"(no title)")}</h2>
+        <div class="split" style="margin-top:8px;">
+          ${c.sec_level? `<span class="pill"><strong>sec</strong> ${esc(c.sec_level)}</span>`:""}
+          ${c.effort_level? `<span class="pill"><strong>eff</strong> ${esc(c.effort_level)}</span>`:""}
+          ${c.class? `<span class="pill"><strong>class</strong> ${esc(c.class)}</span>`:""}
+          <span class="pill"><strong>incoming</strong> ${counts.incoming}</span>
+          <span class="pill"><strong>outgoing</strong> ${counts.outgoing}</span>
+          <span class="pill ${counts.broken? "bad":"ok"}"><strong>broken</strong> ${counts.broken}</span>
+          ${c.altIds?.length? `<span class="pill"><strong>alias</strong> ${esc(c.altIds[0])}${c.altIds.length>1?` +${c.altIds.length-1}`:""}</span>`:""}
+        </div>
+      </div>
+
+      <div class="split">
+        <button class="btn" id="copyIdBtn">Copy ID</button>
+        <button class="btn" id="copyLinkBtn">Copy deep-link</button>
+        <button class="btn tgl" id="selThisBtn" aria-pressed="${isSelected(c.id)?"true":"false"}">${isSelected(c.id)?"Selected":"Select"}</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Statement</h3>
+      <div class="prose" id="proseStatement">${statementHTML || `<span class="muted">(leer)</span>`}</div>
+    </div>
+
+    <div class="section">
+      <h3>Guidance</h3>
+      <div class="prose" id="proseGuidance">${guidanceHTML || `<span class="muted">(leer)</span>`}</div>
+    </div>
+
+    <details class="acc" open>
+      <summary>Relationships / Links</summary>
+      <div class="accBody">
+        <div class="kv">
+          <div class="k">Outgoing</div>
+          <div class="v">${renderOutgoingTable(outgoingList)}</div>
+          <div class="k">Incoming</div>
+          <div class="v">${renderIncomingTable(incomingList)}</div>
+        </div>
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Params</summary>
+      <div class="accBody">
+        ${renderParams(c.params)}
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Visualization (Local graph)</summary>
+      <div class="accBody">
+        ${renderLocalGraph(c.id)}
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Notes / Status / Tags (Workspace)</summary>
+      <div class="accBody">
+        <div class="grid3">
+          <div>
+            <div class="label">Status</div>
+            <select id="noteStatus" class="select">
+              <option value="">(none)</option>
+              <option value="todo">todo</option>
+              <option value="accepted">accepted</option>
+              <option value="not-applicable">not-applicable</option>
+              <option value="needs-clarification">needs-clarification</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">Tags (comma separated)</div>
+            <div class="field"><input id="noteTags" type="text" placeholder="e.g. policy, ticket-123, risk" /></div>
+          </div>
+          <div>
+            <div class="label">Decision date</div>
+            <div class="field"><input id="noteDate" type="text" placeholder="YYYY-MM-DD" /></div>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+        <div class="label">Decision / Rationale</div>
+        <div class="field"><input id="noteDecision" type="text" placeholder="Kurzentscheidung / Begründung" /></div>
+
+        <div style="height:10px"></div>
+        <div class="label">Notes</div>
+        <textarea id="noteText" placeholder="Notizen…"></textarea>
+
+        <div style="height:12px"></div>
+        <div class="split" style="justify-content:space-between;">
+          <div style="font-weight:700;">Evidence / Links</div>
+          <button id="addEvidenceBtn" class="btn small">+ Add</button>
+        </div>
+
+        <div style="height:8px"></div>
+        <table class="table" id="evidenceTable">
+          <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <div style="height:10px"></div>
+        <div class="split">
+          <button id="noteSaveBtn" class="btn primary">Save</button>
+          <button id="noteClearBtn" class="btn danger">Clear notes for this control</button>
+          <span class="small muted">Alles lokal im Workspace-JSON.</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Raw JSON (Control)</summary>
+      <div class="accBody">
+        <pre class="code">${esc(JSON.stringify(c.raw, null, 2))}</pre>
+      </div>
+    </details>
+  `;
+
+  // bind buttons
+  $("#copyIdBtn").onclick = ()=>{ navigator.clipboard?.writeText(c.id); toast(`Copied ${esc(c.id)}`); };
+  $("#copyLinkBtn").onclick = ()=>{ 
+    const link = `${location.origin}${location.pathname}#id=${encodeURIComponent(c.id)}`;
+    navigator.clipboard?.writeText(link);
+    toast(`Copied deep-link <span class="muted">${esc(link)}</span>`, 2600);
+  };
+  $("#selThisBtn").onclick = ()=>{
+    const cur = isSelected(c.id);
+    toggleSelected(c.id, !cur);
+    $("#selThisBtn").setAttribute("aria-pressed", (!cur)?"true":"false");
+    $("#selThisBtn").textContent = (!cur)?"Selected":"Select";
+  };
+
+  // notes fields initial
+  $("#noteStatus").value = status;
+  $("#noteTags").value = tags;
+  $("#noteDecision").value = decision;
+  $("#noteDate").value = date;
+  $("#noteText").value = note.notes || "";
+  renderEvidenceTable(c.id);
+
+  $("#noteSaveBtn").onclick = ()=>saveNotesFor(c.id);
+  $("#noteClearBtn").onclick = ()=>{ delete WS.notes[c.id]; saveWS(); toast("Notes cleared"); renderDetail(); };
+  $("#addEvidenceBtn").onclick = ()=>{ addEvidenceRow(c.id); };
+
+  // param clicks
+  $$(".param", host).forEach(sp=>{
+    sp.addEventListener("click", ()=>{
+      const pid = sp.dataset.pid;
+      if(pid){
+        ACTIVE_PARAM = pid;
+        WS.lastHash = `#param=${encodeURIComponent(pid)}&id=${encodeURIComponent(c.id)}`;
+        saveWS();
+        updateHash();
+        toast(`Param ${esc(pid)}`);
+      }
+    });
+  });
+
+  // outgoing rel group deep-link clicks
+  $$(".relLink", host).forEach(a=>{
+    a.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const rel = a.dataset.rel;
+      if(rel){
+        ACTIVE_REL = {rel, fromId:c.id};
+        WS.lastHash = `#rel=${encodeURIComponent(rel)}&id=${encodeURIComponent(c.id)}`;
+        saveWS();
+        updateHash();
+        toast(`rel:${esc(rel)}`);
+      }
+    });
+  });
+
+  // initialize highlight nav after rendering prose
+  buildHighlights();
+
+  // update prev/next button enablement
+  updateHighlightButtons();
+}
+
+function highlightProse(text){
+  // highlight terms (same as list)
+  const terms = getHighlightTerms();
+  if(!text) return "";
+  if(terms.length===0) return esc(text);
+
+  // escape then insert marks
+  let out = esc(text);
+  for(const term of terms){
+    const safe = esc(term);
+    if(!safe) continue;
+    try{
+      const re = new RegExp(safe.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+      out = out.replace(re, (m)=>`<mark class="hl">${m}</mark>`);
+    }catch(_){}
+  }
+  return out;
+}
+
+function linkifyParams(htmlEscapedText){
+  // Replace {{param-id}} or [param-id] style? We'll support patterns like {{p.id}}? but we have ids already.
+  // We'll also highlight any param IDs present as standalone tokens in text, best effort.
+  if(!ACTIVE_ID) return htmlEscapedText;
+  const c = IDX.byId.get(ACTIVE_ID);
+  const pids = (c?.params||[]).map(p=>p.id).filter(Boolean);
+  if(pids.length===0) return htmlEscapedText;
+
+  // replace exact occurrences (escaped) to param spans. Use regex alternation; escape.
+  const escaped = pids.map(pid=>esc(pid).replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  // limit regex size
+  const chosen = escaped.slice(0, 60);
+  const re = new RegExp(`\\b(${chosen.join("|")})\\b`, "g");
+  return htmlEscapedText.replace(re, (m)=>`<span class="param" data-pid="${m}">${m}</span>`);
+}
+
+/* ---------- Relationships tables ---------- */
+function renderOutgoingTable(outgoingList){
+  if(!outgoingList || outgoingList.length===0) return `<span class="muted">(keine)</span>`;
+  const rows = outgoingList.map(o=>{
+    const broken = o.targetType==="broken";
+    const target = o.targetType==="control" ? `<a class="link" href="#id=${encodeURIComponent(o.targetId)}">${esc(o.targetId)}</a>`
+                 : (o.targetType==="resource" ? `<span class="mono">resource:${esc(o.targetId)}</span>` : `<span class="mono">${esc(o.targetId||"")}</span>`);
+    const badge = broken ? `<span class="badge r">broken</span>` : (o.targetType==="control"? `<span class="badge k">control</span>`:`<span class="badge">resource</span>`);
+    const rel = o.rel ? `<a href="#" class="link relLink" data-rel="${esc(o.rel)}">${esc(o.rel)}</a>` : `<span class="muted">(rel)</span>`;
+    const href = o.href ? `<span class="mono">${esc(o.href)}</span>` : "";
+    return `<tr>
+      <td>${rel}</td>
+      <td>${href}</td>
+      <td>${target}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join("");
+  return `<table class="table">
+    <thead><tr><th>rel</th><th>href</th><th>target</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+function renderIncomingTable(incomingList){
+  if(!incomingList || incomingList.length===0) return `<span class="muted">(keine)</span>`;
+  const rows = incomingList.map(i=>{
+    return `<tr>
+      <td><a class="link" href="#id=${encodeURIComponent(i.fromId)}">${esc(i.fromId)}</a></td>
+      <td>${esc(i.rel||"")}</td>
+      <td><span class="mono">${esc(i.href||"")}</span></td>
+    </tr>`;
+  }).join("");
+  return `<table class="table">
+    <thead><tr><th>from</th><th>rel</th><th>href</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+/* ---------- Params rendering ---------- */
+function renderParams(params){
+  if(!params || params.length===0) return `<span class="muted">(keine)</span>`;
+  const rows = params.map(p=>{
+    const vals = (p.values||[]).map(v=>`<span class="pill"><span class="mono">${esc(v)}</span></span>`).join(" ");
+    return `<tr>
+      <td><span class="mono">${esc(p.id)}</span></td>
+      <td>${esc(p.label||"")}</td>
+      <td>${vals || `<span class="muted">(none)</span>`}</td>
+    </tr>`;
+  }).join("");
+  return `<table class="table">
+    <thead><tr><th>Param</th><th>Label</th><th>Values</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+/* ---------- Local graph visualization ---------- */
+function renderLocalGraph(centerId){
+  const c = IDX.byId.get(centerId);
+  if(!c) return `<span class="muted">(no graph)</span>`;
+  // nodes: center + outgoing controls + incoming controls (limit)
+  const inc = (IDX.incoming.get(centerId)||[]).map(x=>x.fromId);
+  const out = (IDX.outgoing.get(centerId)||[]).filter(x=>x.targetType==="control").map(x=>x.targetId);
+  const broken = (IDX.outgoing.get(centerId)||[]).filter(x=>x.targetType==="broken");
+  const incU = uniq(inc).slice(0, 10);
+  const outU = uniq(out).slice(0, 12);
+  const nodes = [{id:centerId, kind:"center"}]
+    .concat(incU.map(id=>({id, kind:"in"})))
+    .concat(outU.map(id=>({id, kind:"out"})));
+
+  // simple layout: incoming left column, center middle, outgoing right
+  const w = 920;
+  const h = 260;
+  const pad = 18;
+  const colX = {in: 200, center: 460, out: 720};
+  const yPositions = (n)=>{
+    if(n<=1) return [h/2];
+    const gap = (h-2*pad)/(n-1);
+    return Array.from({length:n}, (_,i)=>pad + i*gap);
+  };
+  const yIn = yPositions(incU.length || 1);
+  const yOut = yPositions(outU.length || 1);
+
+  const pos = new Map();
+  pos.set(centerId, {x:colX.center, y:h/2});
+  incU.forEach((id,i)=>pos.set(id, {x:colX.in, y:yIn[i]}));
+  outU.forEach((id,i)=>pos.set(id, {x:colX.out, y:yOut[i]}));
+
+  const edges = [];
+  for(const from of incU){
+    edges.push({from, to:centerId, cls:"in", rel:"incoming"});
+  }
+  for(const o of (IDX.outgoing.get(centerId)||[])){
+    if(o.targetType==="control" && pos.has(o.targetId)){
+      edges.push({from:centerId, to:o.targetId, cls:"", rel:o.rel||""});
+    }
+  }
+  // broken edges as stubs
+  broken.slice(0,6).forEach((b,i)=>{
+    const stubId = `broken:${i}`;
+    const y = pad + i*22;
+    pos.set(stubId, {x: colX.out+120, y});
+    nodes.push({id:stubId, kind:"broken", label: b.href || b.targetId || "broken"});
+    edges.push({from:centerId, to:stubId, cls:"broken", rel:b.rel||"broken"});
+  });
+
+  const nodeSVG = nodes.map(n=>{
+    const p = pos.get(n.id) || {x:0,y:0};
+    const label = (n.kind==="broken") ? (n.label||"broken") : n.id;
+    const isCenter = n.kind==="center";
+    const wBox = isCenter? 180 : 170;
+    const hBox = 34;
+    const x = p.x - wBox/2;
+    const y = p.y - hBox/2;
+    return `
+      <g class="gNode ${isCenter?"center":""}" data-id="${esc(n.id)}" transform="translate(${x},${y})">
+        <rect width="${wBox}" height="${hBox}"></rect>
+        <text x="10" y="22">${esc(label).slice(0, 22)}${label.length>22?"…":""}</text>
+      </g>
+    `;
+  }).join("");
+
+  const edgeSVG = edges.map(e=>{
+    const a = pos.get(e.from);
+    const b = pos.get(e.to);
+    if(!a||!b) return "";
+    const dx = (b.x-a.x);
+    const cp1x = a.x + dx*0.4;
+    const cp2x = a.x + dx*0.6;
+    const d = `M ${a.x} ${a.y} C ${cp1x} ${a.y}, ${cp2x} ${b.y}, ${b.x} ${b.y}`;
+    return `<path class="gEdge ${e.cls||""}" data-rel="${esc(e.rel||"")}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${d}"></path>`;
+  }).join("");
+
+  const html = `
+    <div class="graphWrap">
+      <div class="graphHdr">
+        <div class="small">Local graph: incoming (left) / outgoing (right). Click node to open.</div>
+        <div class="small muted">Limits: in≤10 · out≤12 · broken≤6</div>
+      </div>
+      <svg class="localGraph" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+        ${edgeSVG}
+        ${nodeSVG}
+      </svg>
+    </div>
+  `;
+
+  // Bind events after injection (done in renderDetail with delegation by selecting)
+  setTimeout(()=>{
+    const svg = $("svg.localGraph");
+    if(!svg) return;
+    const tt = $("#tooltip");
+    $$(".gNode", svg).forEach(n=>{
+      n.addEventListener("mousemove", (ev)=>{
+        const id = n.dataset.id;
+        const c = IDX.byId.get(id);
+        tt.style.display="block";
+        tt.style.left = (ev.clientX+14)+"px";
+        tt.style.top  = (ev.clientY+14)+"px";
+        tt.innerHTML = c ? `<div style="font-weight:750">${esc(c.id)}</div><div class="muted">${esc(c.title||"")}</div>` : `<div style="font-weight:750">${esc(id)}</div>`;
+      });
+      n.addEventListener("mouseleave", ()=>{ tt.style.display="none"; });
+      n.addEventListener("click", ()=>{
+        const id = n.dataset.id;
+        if(IDX.byId.has(id)) openControl(id);
+      });
+    });
+    $$(".gEdge", svg).forEach(p=>{
+      p.addEventListener("mousemove", (ev)=>{
+        const rel = p.dataset.rel || "";
+        tt.style.display="block";
+        tt.style.left = (ev.clientX+14)+"px";
+        tt.style.top  = (ev.clientY+14)+"px";
+        tt.innerHTML = `<div style="font-weight:750">rel:${esc(rel||"(none)")}</div><div class="muted">${esc(p.dataset.from)} → ${esc(p.dataset.to)}</div>`;
+      });
+      p.addEventListener("mouseleave", ()=>{ tt.style.display="none"; });
+    });
+  }, 0);
+
+  return html;
+}
+
+/* ---------- Highlights nav in detail ---------- */
+function buildHighlights(){
+  const host = $("#detail");
+  const marks = $$("mark.hl", host);
+  HL.list = marks;
+  HL.idx = marks.length ? 0 : -1;
+  // reset active class
+  marks.forEach(m=>m.classList.remove("active"));
+  if(HL.idx>=0) marks[HL.idx].classList.add("active");
+  $("#hlCount").textContent = String(marks.length);
+  updateHighlightButtons();
+  if(HL.idx>=0) scrollToHighlight(HL.idx);
+}
+
+function scrollToHighlight(idx){
+  if(!HL.list.length) return;
+  const m = HL.list[idx];
+  if(!m) return;
+  // scroll within main pane
+  m.scrollIntoView({behavior:"smooth", block:"center"});
+}
+function updateHighlightButtons(){
+  const has = HL.list.length>0;
+  $("#prevHlBtn").disabled = !has;
+  $("#nextHlBtn").disabled = !has;
+}
+function nextHighlight(dir=1){
+  if(!HL.list.length) return;
+  HL.list[HL.idx]?.classList.remove("active");
+  HL.idx = (HL.idx + dir + HL.list.length) % HL.list.length;
+  HL.list[HL.idx]?.classList.add("active");
+  scrollToHighlight(HL.idx);
+}
+
+/* ---------- Notes & evidence ---------- */
+function saveNotesFor(id){
+  const status = $("#noteStatus").value;
+  const tags = ($("#noteTags").value||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const decision = $("#noteDecision").value||"";
+  const date = ($("#noteDate").value||"").trim() || nowISO();
+  const notes = $("#noteText").value||"";
+  const evidence = readEvidenceTable();
+
+  WS.notes[id] = {status, tags, decision, date, notes, evidence};
+  saveWS();
+  toast("Notes saved");
+  renderTree(); // update badges maybe later
+}
+function renderEvidenceTable(id){
+  const note = WS.notes[id] || {evidence:[]};
+  const tbody = $("#evidenceTable tbody");
+  tbody.innerHTML = "";
+  for(const ev of (note.evidence||[])){
+    addEvidenceRow(id, ev.label, ev.url);
+  }
+}
+function addEvidenceRow(id, label="", url=""){
+  const tbody = $("#evidenceTable tbody");
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><div class="field"><input class="evLabel" type="text" placeholder="Label" value="${esc(label)}" /></div></td>
+    <td><div class="field"><input class="evUrl" type="text" placeholder="https://..." value="${esc(url)}" /></div></td>
+    <td><button class="btn small danger evDel">X</button></td>
+  `;
+  tr.querySelector(".evDel").onclick = ()=>{ tr.remove(); };
+  tbody.appendChild(tr);
+}
+function readEvidenceTable(){
+  const rows = $$("#evidenceTable tbody tr");
+  return rows.map(r=>({
+    label: r.querySelector(".evLabel")?.value?.trim() || "",
+    url: r.querySelector(".evUrl")?.value?.trim() || ""
+  })).filter(x=>x.label || x.url);
+}
+
+/* ---------- Selection ---------- */
+function getSelection(){
+  return Array.isArray(WS.selection) ? WS.selection.slice() : [];
+}
+function isSelected(id){
+  return getSelection().includes(id);
+}
+function toggleSelected(id, on){
+  const sel = new Set(getSelection());
+  if(on) sel.add(id); else sel.delete(id);
+  WS.selection = Array.from(sel).sort((a,b)=>a.localeCompare(b, undefined, {numeric:true}));
+  $("#selectedCount").textContent = String(WS.selection.length);
+  saveWS();
+  refreshSelectedPanelIfOpen();
+  renderTree();
+}
+function clearSelection(){
+  WS.selection = [];
+  saveWS();
+  $("#selectedCount").textContent = "0";
+  refreshSelectedPanelIfOpen();
+  renderTree();
+}
+
+/* ---------- Selected panel ---------- */
+function refreshSelectedPanelIfOpen(){
+  if(currentTab()==="selected") refreshSelectedPanel();
+}
+function refreshSelectedPanel(){
+  const sel = getSelection().filter(id=>IDX?.byId?.has(id));
+  $("#selCount2").textContent = String(sel.length);
+  const tbody = $("#selTable tbody");
+  tbody.innerHTML = "";
+  for(const id of sel){
+    const c = IDX.byId.get(id);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><a class="link" href="#id=${encodeURIComponent(id)}">${esc(id)}</a></td>
+      <td>${esc(c.sec_level||"")}</td>
+      <td>${esc(c.effort_level||"")}</td>
+      <td>${esc(c.class||"")}</td>
+      <td>${esc(c.title||"")}</td>
+      <td><button class="btn small danger">Remove</button></td>
+    `;
+    tr.querySelector("button").onclick = ()=>toggleSelected(id, false);
+    tbody.appendChild(tr);
+  }
+  $("#selectedCount").textContent = String(getSelection().length);
+}
+
+function exportJSON(obj, filename){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 800);
+}
+
+function exportProfileSkeleton(){
+  const sel = getSelection().filter(id=>IDX?.byId?.has(id));
+  if(sel.length===0){ toast("Selection empty"); return; }
+  const md = IDX.cat?.metadata || {};
+  const prof = {
+    profile: {
+      uuid: crypto?.randomUUID?.() || undefined,
+      metadata: {
+        title: (md.title? `${md.title} (Selection Profile)` : "Selection Profile"),
+        last_modified: new Date().toISOString(),
+        version: "0.1"
+      },
+      imports: [{
+        href: WS.lastUrl ? toRaw(WS.lastUrl) : "",
+        include_controls: [{
+          with_ids: sel
+        }]
+      }]
+    }
+  };
+  exportJSON(prof, `oscal-profile-selection-${sel.length}.json`);
+}
+
+function exportMiniCatalog(){
+  const sel = getSelection().filter(id=>IDX?.byId?.has(id));
+  if(sel.length===0){ toast("Selection empty"); return; }
+  const cat = getCatalogRoot(CATALOG_A);
+  const md = cat?.metadata || {};
+  const controls = sel.map(id=>IDX.byId.get(id).raw);
+  const mini = {
+    catalog: {
+      uuid: crypto?.randomUUID?.() || undefined,
+      metadata: {
+        title: (md.title? `${md.title} (Mini-Catalog)` : "Mini-Catalog"),
+        last_modified: new Date().toISOString(),
+        version: "0.1"
+      },
+      controls: controls
+    }
+  };
+  exportJSON(mini, `oscal-mini-catalog-${sel.length}.json`);
+}
+
+/* ---------- Mapping / Traceability ---------- */
+function refreshMappingIfOpen(){
+  if(currentTab()==="mapping") refreshMapping();
+}
+function refreshMapping(){
+  if(!IDX) return;
+  const scope = $("#mapScope").value;
+  const rel = $("#mapRel").value;
+
+  const ids = (scope==="selected")
+    ? getSelection().filter(id=>IDX.byId.has(id))
+    : FILTERED.map(c=>c.id);
+
+  // keep matrix to manageable size
+  const max = 60;
+  const use = ids.slice(0, max);
+  $("#mapHint").textContent = `IDs=${ids.length} (showing ${use.length})`;
+
+  // Build adjacency counts
+  const mat = [];
+  for(const a of use){
+    const row = [];
+    const outs = (IDX.outgoing.get(a)||[]).filter(x=>x.targetType==="control");
+    for(const b of use){
+      if(a===b){ row.push(0); continue; }
+      const n = outs.filter(x=>x.targetId===b && (!rel || (x.rel||"")===rel)).length;
+      row.push(n);
+    }
+    mat.push(row);
+  }
+
+  const table = $("#matrix");
+  table.innerHTML = "";
+  const thead = document.createElement("thead");
+  const tr0 = document.createElement("tr");
+  tr0.innerHTML = `<th class="left">from\\to</th>` + use.map(id=>`<th>${esc(id)}</th>`).join("");
+  thead.appendChild(tr0);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  for(let i=0;i<use.length;i++){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="left">${esc(use[i])}</td>` + mat[i].map((n,j)=>{
+      const dot = n>0 ? `<span class="dot"></span>` : `<span class="dot zero"></span>`;
+      const num = n>0 ? `<span class="cellNum">${n}</span>` : `<span class="cellNum">0</span>`;
+      return `<td data-from="${esc(use[i])}" data-to="${esc(use[j])}" data-n="${n}">${dot}<div>${num}</div></td>`;
+    }).join("");
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+
+  // click cell to open relation
+  $$("td[data-n]", table).forEach(td=>{
+    td.addEventListener("click", ()=>{
+      const n = parseInt(td.dataset.n,10);
+      if(n<=0) return;
+      const from = td.dataset.from;
+      const to = td.dataset.to;
+      openControl(from);
+      toast(`Edge ${esc(from)} → ${esc(to)} (${n})`);
+    });
+  });
+
+  // fill trace selects
+  fillTraceSelects();
+}
+
+function fillTraceSelects(){
+  const fromSel = $("#traceFrom");
+  const toSel = $("#traceTo");
+  if(!fromSel || !toSel) return;
+  const ids = FILTERED.map(c=>c.id).slice(0, 500);
+  const opt = ids.map(id=>`<option value="${esc(id)}">${esc(id)}</option>`).join("");
+  fromSel.innerHTML = opt;
+  toSel.innerHTML = opt;
+  if(ACTIVE_ID){
+    fromSel.value = ACTIVE_ID;
+  }
+}
+
+function findPathsBFS(from, to, maxDepth, relFilter=""){
+  // BFS over control graph using outgoing edges
+  const paths = [];
+  const q = [{id:from, path:[from]}];
+  const seen = new Set();
+  const key = (id, depth)=>`${id}@${depth}`;
+  while(q.length){
+    const cur = q.shift();
+    const depth = cur.path.length-1;
+    if(depth>maxDepth) continue;
+    if(cur.id===to){
+      paths.push(cur.path);
+      if(paths.length>=25) break;
+      continue;
+    }
+    const outs = (IDX.outgoing.get(cur.id)||[]).filter(x=>x.targetType==="control");
+    for(const e of outs){
+      if(relFilter && (e.rel||"")!==relFilter) continue;
+      const nxt = e.targetId;
+      const nd = depth+1;
+      const k = key(nxt, nd);
+      if(seen.has(k)) continue;
+      seen.add(k);
+      // avoid cycles in path
+      if(cur.path.includes(nxt)) continue;
+      q.push({id:nxt, path:[...cur.path, nxt]});
+    }
+  }
+  return paths;
+}
+
+/* ---------- Dashboard / Visualizations ---------- */
+function refreshDashboardIfOpen(){
+  if(currentTab()==="dashboard") refreshDashboard();
+}
+
+function scopeList(scope){
+  if(!IDX) return [];
+  if(scope==="selected") return getSelection().filter(id=>IDX.byId.has(id)).map(id=>IDX.byId.get(id));
+  if(scope==="visible") return FILTERED.slice();
+  return IDX.controls.slice();
+}
+
+function barChart(el, counts){
+  // counts = array of [label, value]
+  const max = Math.max(...counts.map(x=>x[1]), 1);
+  el.innerHTML = counts.map(([label, v])=>{
+    const pct = Math.round((v/max)*100);
+    return `<div class="barRow">
+      <div class="barLabel" title="${esc(label)}">${esc(label)}</div>
+      <div class="barTrack"><div class="barFill" style="width:${pct}%"></div></div>
+      <div class="barValue">${v}</div>
+    </div>`;
+  }).join("");
+}
+
+function quantile(arr, q){
+  if(arr.length===0) return 0;
+  const s = arr.slice().sort((a,b)=>a-b);
+  const pos = (s.length-1)*q;
+  const base = Math.floor(pos);
+  const rest = pos-base;
+  if(s[base+1]!==undefined) return s[base] + rest*(s[base+1]-s[base]);
+  return s[base];
+}
+
+let scatterState = {points:[], bbox:null};
+
+function refreshDashboard(){
+  if(!IDX) return;
+  const scope = $("#dashScope").value;
+  const list = scopeList(scope);
+
+  // distributions
+  const by = (fn)=> {
+    const m = new Map();
+    for(const c of list){
+      const k = fn(c) || "(none)";
+      m.set(k, (m.get(k)||0)+1);
+    }
+    return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]);
+  };
+  barChart($("#chartSec"), by(c=>c.sec_level));
+  barChart($("#chartEff"), by(c=>String(c.effort_level||"")));
+  barChart($("#chartClass"), by(c=>c.class));
+  // group approx: first group path segment title/id
+  barChart($("#chartGroups"), by(c=>{
+    const first = c.groupPath?.[0];
+    return first ? (first.title||first.id||"(group)") : "(none)";
+  }).slice(0,10));
+
+  // quantiles incoming/outgoing
+  const incArr = list.map(c=>(IDX.counts.get(c.id)?.incoming||0));
+  const outArr = list.map(c=>(IDX.counts.get(c.id)?.outgoing||0));
+  const qs = [0,0.25,0.5,0.75,0.9,1].map(q=>({
+    q, inc:quantile(incArr,q), out:quantile(outArr,q)
+  }));
+  $("#quantiles").innerHTML = qs.map(x=>`q${Math.round(x.q*100)}: inc≈${x.inc.toFixed(1)} · out≈${x.out.toFixed(1)}`).join("<br>");
+
+  // hubs
+  const hubs = list.map(c=>{
+    const cnt = IDX.counts.get(c.id)||{incoming:0,outgoing:0,broken:0};
+    return {id:c.id, title:c.title, incoming:cnt.incoming, outgoing:cnt.outgoing};
+  }).sort((a,b)=>b.incoming-a.incoming).slice(0,10);
+  const ht = $("#hubsTable tbody");
+  ht.innerHTML = hubs.map(h=>`<tr>
+    <td><a class="link" href="#id=${encodeURIComponent(h.id)}">${esc(h.id)}</a></td>
+    <td>${h.incoming}</td>
+    <td>${h.outgoing}</td>
+    <td>${esc(h.title||"")}</td>
+  </tr>`).join("");
+
+  // broken list
+  const bt = $("#brokenTable tbody");
+  const broken = IDX.broken.slice(0, 200);
+  bt.innerHTML = broken.map(b=>`<tr>
+    <td><a class="link" href="#id=${encodeURIComponent(b.fromId)}">${esc(b.fromId)}</a></td>
+    <td>${esc(b.rel||"")}</td>
+    <td><span class="mono">${esc(b.href||"")}</span></td>
+  </tr>`).join("");
+
+  // scatter
+  drawScatter(list);
+}
+
+function drawScatter(list){
+  const canvas = $("#scatter");
+  if(!canvas) return;
+  // match displayed size
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(320, Math.floor(rect.width * devicePixelRatio));
+  canvas.height = Math.max(260, Math.floor(rect.height * devicePixelRatio));
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const pad = 36 * devicePixelRatio;
+  const w = canvas.width, h = canvas.height;
+  const points = list.map(c=>{
+    const cnt = IDX.counts.get(c.id)||{incoming:0,outgoing:0,broken:0};
+    return {id:c.id, x:cnt.incoming, y:cnt.outgoing, broken:cnt.broken, title:c.title||""};
+  });
+
+  const maxX = Math.max(...points.map(p=>p.x), 1);
+  const maxY = Math.max(...points.map(p=>p.y), 1);
+
+  function sx(x){ return pad + (x/maxX)*(w-2*pad); }
+  function sy(y){ return (h-pad) - (y/maxY)*(h-2*pad); }
+
+  // axes
+  ctx.strokeStyle = "rgba(36,48,65,.9)";
+  ctx.lineWidth = 1.2*devicePixelRatio;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, h-pad);
+  ctx.lineTo(w-pad, h-pad);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(168,179,194,.85)";
+  ctx.font = `${11*devicePixelRatio}px ${getComputedStyle(document.body).fontFamily}`;
+  ctx.fillText("incoming", w/2 - 24*devicePixelRatio, h - 10*devicePixelRatio);
+  ctx.save();
+  ctx.translate(12*devicePixelRatio, h/2 + 20*devicePixelRatio);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText("outgoing", 0, 0);
+  ctx.restore();
+
+  // points
+  scatterState.points = points.map(p=>{
+    const px = sx(p.x);
+    const py = sy(p.y);
+    return {...p, px, py};
+  });
+
+  for(const p of scatterState.points){
+    const r = (p.broken>0) ? 4.5*devicePixelRatio : 3.2*devicePixelRatio;
+    ctx.beginPath();
+    ctx.arc(p.px, p.py, r, 0, Math.PI*2);
+    ctx.fillStyle = (p.broken>0) ? "rgba(255,106,106,.75)" : "rgba(106,169,255,.75)";
+    ctx.fill();
+  }
+
+  // hover + click
+  canvas.onmousemove = (ev)=>{
+    const mx = (ev.offsetX * devicePixelRatio);
+    const my = (ev.offsetY * devicePixelRatio);
+    const hit = nearestPoint(mx,my, 9*devicePixelRatio);
+    const tt = $("#tooltip");
+    if(hit){
+      tt.style.display="block";
+      tt.style.left = (ev.clientX+14)+"px";
+      tt.style.top  = (ev.clientY+14)+"px";
+      tt.innerHTML = `<div style="font-weight:750">${esc(hit.id)}</div>
+        <div class="muted">${esc(hit.title||"")}</div>
+        <div class="muted">in=${hit.x} · out=${hit.y} · broken=${hit.broken}</div>`;
+    }else{
+      tt.style.display="none";
+    }
+  };
+  canvas.onmouseleave = ()=>{ $("#tooltip").style.display="none"; };
+  canvas.onclick = (ev)=>{
+    const mx = (ev.offsetX * devicePixelRatio);
+    const my = (ev.offsetY * devicePixelRatio);
+    const hit = nearestPoint(mx,my, 9*devicePixelRatio);
+    if(hit){ openControl(hit.id); setTab("detail"); }
+  };
+}
+
+function nearestPoint(mx,my, maxDist){
+  let best=null, bd=Infinity;
+  for(const p of scatterState.points){
+    const dx=p.px-mx, dy=p.py-my;
+    const d = Math.sqrt(dx*dx+dy*dy);
+    if(d<bd && d<=maxDist){ bd=d; best=p; }
+  }
+  return best;
+}
+
+/* ---------- Similarity (TF-IDF light) + Near-duplicates ---------- */
+function tokenizeText(txt){
+  const stop = new Set(["und","oder","der","die","das","ein","eine","mit","für","von","in","im","auf","an","zu","ist","sind","nicht","den","des","dem","bei","als","auch","nur","mehr","weniger","kann","soll","muss","müssen","können","sollen","werden","wird","durch","this","that","the","and","or","to","of","in","on","for","with","as","be","are","is"]);
+  return (txt||"").toLowerCase()
+    .split(/[^a-z0-9äöüß]+/i)
+    .filter(w=>w.length>=4 && !stop.has(w));
+}
+function buildTFIDF(list, field="all"){
+  // returns {idf:Map, vecs:Map(id->Map(term->tfidf))}
+  const docs = list.map(c=>{
+    const text = (field==="statement") ? c.statement
+               : (field==="guidance") ? c.guidance
+               : `${c.title} ${c.statement} ${c.guidance}`;
+    const toks = tokenizeText(text);
+    return {id:c.id, toks};
+  });
+  const df = new Map();
+  for(const d of docs){
+    const u = new Set(d.toks);
+    for(const t of u) df.set(t, (df.get(t)||0)+1);
+  }
+  const N = docs.length || 1;
+  const idf = new Map();
+  for(const [t,n] of df.entries()){
+    idf.set(t, Math.log((N+1)/(n+1)) + 1);
+  }
+  const vecs = new Map();
+  for(const d of docs){
+    const tf = new Map();
+    for(const t of d.toks) tf.set(t, (tf.get(t)||0)+1);
+    // normalize tf
+    const maxTf = Math.max(...tf.values(), 1);
+    const v = new Map();
+    for(const [t,n] of tf.entries()){
+      const w = (n/maxTf) * (idf.get(t)||1);
+      v.set(t, w);
+    }
+    vecs.set(d.id, v);
+  }
+  return {idf, vecs};
+}
+function cosine(a,b){
+  let dot=0, na=0, nb=0;
+  for(const [t,w] of a.entries()){
+    na += w*w;
+    if(b.has(t)) dot += w*b.get(t)*w/w; // oops, fix below
+  }
+  // We introduced a bug above: dot computation incorrect. We'll compute properly:
+  dot=0;
+  for(const [t,w] of a.entries()){
+    if(b.has(t)) dot += w * b.get(t);
+  }
+  for(const w of b.values()) nb += w*w;
+  na = Math.sqrt(na); nb = Math.sqrt(nb);
+  if(na===0 || nb===0) return 0;
+  return dot/(na*nb);
+}
+
+function computeNearDuplicates(){
+  if(!IDX) return;
+  const scope = $("#dashScope").value;
+  const list = scopeList(scope);
+  if(list.length<2){ toast("Need at least 2 controls"); return; }
+
+  // build TF-IDF for statement+guidance separately and combined
+  const tfAll = buildTFIDF(list, "all");
+  const tfSt = buildTFIDF(list, "statement");
+  const tfGu = buildTFIDF(list, "guidance");
+
+  const threshold = 0.82; // could be UI later
+  const pairs = [];
+
+  // reduce search by bucket on top term
+  const buckets = new Map(); // term -> ids
+  for(const c of list){
+    const v = tfAll.vecs.get(c.id);
+    if(!v) continue;
+    // top term
+    let topT=null, topW=-1;
+    for(const [t,w] of v.entries()){
+      if(w>topW){ topW=w; topT=t; }
+    }
+    const key = topT || "(none)";
+    if(!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(c.id);
+  }
+
+  for(const ids of buckets.values()){
+    // compare within bucket only (still can miss some, but pragmatic)
+    for(let i=0;i<ids.length;i++){
+      for(let j=i+1;j<ids.length;j++){
+        const a = ids[i], b = ids[j];
+        const vA = tfAll.vecs.get(a), vB = tfAll.vecs.get(b);
+        const sAll = cosine(vA,vB);
+        if(sAll >= threshold){
+          const sSt = cosine(tfSt.vecs.get(a), tfSt.vecs.get(b));
+          const sGu = cosine(tfGu.vecs.get(a), tfGu.vecs.get(b));
+          pairs.push({a,b, sAll, sSt, sGu});
+        }
+      }
+    }
+  }
+
+  pairs.sort((x,y)=>y.sAll-x.sAll);
+  const top = pairs.slice(0, 50);
+
+  const out = $("#dupOut");
+  if(top.length===0){
+    out.innerHTML = "Keine Near-Duplicates über Threshold gefunden.";
+    return;
+  }
+  out.innerHTML = `
+    <table class="table">
+      <thead><tr><th>A</th><th>B</th><th>sim(all)</th><th>sim(stmt)</th><th>sim(guide)</th></tr></thead>
+      <tbody>
+        ${top.map(p=>`<tr>
+          <td><a class="link" href="#id=${encodeURIComponent(p.a)}">${esc(p.a)}</a></td>
+          <td><a class="link" href="#id=${encodeURIComponent(p.b)}">${esc(p.b)}</a></td>
+          <td>${p.sAll.toFixed(2)}</td>
+          <td>${p.sSt.toFixed(2)}</td>
+          <td>${p.sGu.toFixed(2)}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+    <div class="small muted" style="margin-top:8px;">Threshold: ${threshold}</div>
+  `;
+}
+
+/* ---------- Lint ---------- */
+let LINT = [];
+function refreshLint(){
+  if(!IDX) return;
+  LINT = runLint(IDX);
+  renderLint();
+}
+function runLint(idx){
+  const issues = [];
+  const seen = new Set();
+  // duplicate IDs
+  for(const c of idx.controls){
+    if(seen.has(c.id)){
+      issues.push({sev:"error", type:"duplicate-id", id:c.id, msg:"Duplicate control id"});
+    }
+    seen.add(c.id);
+    if(!(c.title||"").trim()){
+      issues.push({sev:"warn", type:"missing-title", id:c.id, msg:"Empty or missing title"});
+    }
+    // parts without prose
+    const parts = c.raw?.parts || c.raw?.part || [];
+    if(Array.isArray(parts)){
+      for(const p of parts){
+        if(p && typeof p==="object" && p.name && !p.prose && (!p.parts || p.parts.length===0)){
+          issues.push({sev:"info", type:"part-no-prose", id:c.id, msg:`Part "${p.name}" has no prose`});
+        }
+      }
+    }
+    // params without label/values
+    for(const p of (c.params||[])){
+      if(!(p.label||"").trim()){
+        issues.push({sev:"info", type:"param-no-label", id:c.id, msg:`Param ${p.id} missing label`});
+      }
+      if((p.values||[]).length===0 && !p.select){
+        issues.push({sev:"info", type:"param-no-values", id:c.id, msg:`Param ${p.id} has no values/select`});
+      }
+    }
+    // schema shapes: links not array
+    if(c.raw?.links && !Array.isArray(c.raw.links)){
+      issues.push({sev:"warn", type:"unexpected-shape", id:c.id, msg:"control.links exists but is not an array"});
+    }
+  }
+  // link href invalid/broken
+  for(const b of idx.broken){
+    issues.push({sev:"warn", type:"broken-link", id:b.fromId, msg:`Broken href ${b.href} (rel:${b.rel||""})`});
+  }
+  // unexpected top-level shapes
+  if(!idx.cat?.groups && !idx.cat?.controls){
+    issues.push({sev:"info", type:"schema", id:"(catalog)", msg:"Catalog has no groups/controls at expected paths (robust parsing used)."});
+  }
+  return issues;
+}
+function renderLint(){
+  const filter = $("#lintFilter").value;
+  const list = filter ? LINT.filter(x=>x.sev===filter) : LINT;
+  $("#lintSummary").textContent = `${list.length} issues (total ${LINT.length})`;
+  const tb = $("#lintTable tbody");
+  tb.innerHTML = list.map(x=>`<tr data-id="${esc(x.id)}">
+    <td>${esc(x.sev)}</td>
+    <td>${esc(x.type)}</td>
+    <td>${x.id && IDX.byId.has(x.id) ? `<a class="link" href="#id=${encodeURIComponent(x.id)}">${esc(x.id)}</a>` : `<span class="mono">${esc(x.id||"")}</span>`}</td>
+    <td>${esc(x.msg)}</td>
+  </tr>`).join("");
+}
+
+/* ---------- Diff ---------- */
+let DIFF = {new:[], removed:[], changed:[], byId:new Map(), baseA:null, baseB:null};
+function computeDiff(A, B){
+  const idxA = buildIndex(A);
+  const idxB = buildIndex(B);
+  const mapA = idxA.byId;
+  const mapB = idxB.byId;
+
+  const allIds = uniq([...mapA.keys(), ...mapB.keys()]).sort((a,b)=>a.localeCompare(b, undefined, {numeric:true}));
+  const out = {new:[], removed:[], changed:[], byId:new Map(), baseA:idxA, baseB:idxB};
+
+  for(const id of allIds){
+    const a = mapA.get(id);
+    const b = mapB.get(id);
+    if(a && !b){
+      out.removed.push({type:"removed", id, a, b:null});
+    }else if(!a && b){
+      out.new.push({type:"new", id, a:null, b});
+    }else if(a && b){
+      const changes = [];
+      if((a.title||"") !== (b.title||"")) changes.push("title");
+      if((a.statement||"") !== (b.statement||"")) changes.push("statement");
+      if((a.guidance||"") !== (b.guidance||"")) changes.push("guidance");
+      if((a.sec_level||"") !== (b.sec_level||"")) changes.push("sec_level");
+      if((a.effort_level||"") !== (b.effort_level||"")) changes.push("effort_level");
+      if((a.class||"") !== (b.class||"")) changes.push("class");
+      // compare outgoing link counts as proxy
+      if((a.links||[]).length !== (b.links||[]).length) changes.push("links");
+      if(changes.length){
+        out.changed.push({type:"changed", id, a, b, changes});
+      }
+    }
+  }
+  for(const x of [...out.new, ...out.removed, ...out.changed]) out.byId.set(x.id, x);
+  return out;
+}
+
+function refreshDiffTable(){
+  if(!CATALOG_B){
+    $("#diffSummary").textContent = "B not loaded.";
+    $("#diffTable tbody").innerHTML = "";
+    return;
+  }
+  if(!DIFF.baseA || !DIFF.baseB){
+    DIFF = computeDiff(CATALOG_A, CATALOG_B);
+  }
+  const showNew = $("#diffShowNew").getAttribute("aria-pressed")==="true";
+  const showRem = $("#diffShowRemoved").getAttribute("aria-pressed")==="true";
+  const showChg = $("#diffShowChanged").getAttribute("aria-pressed")==="true";
+  const q = ($("#diffSearch").value||"").trim().toLowerCase();
+
+  let items = [];
+  if(showNew) items = items.concat(DIFF.new);
+  if(showRem) items = items.concat(DIFF.removed);
+  if(showChg) items = items.concat(DIFF.changed);
+
+  if(q){
+    items = items.filter(x=>{
+      const title = (x.b?.title || x.a?.title || "").toLowerCase();
+      return x.id.toLowerCase().includes(q) || title.includes(q) || (x.changes||[]).join(",").includes(q);
+    });
+  }
+
+  $("#diffSummary").textContent = `new=${DIFF.new.length} · removed=${DIFF.removed.length} · changed=${DIFF.changed.length} · showing=${items.length}`;
+  const tb = $("#diffTable tbody");
+  tb.innerHTML = items.slice(0, 400).map(x=>{
+    const label = x.type;
+    const changes = x.changes ? x.changes.join(", ") : "";
+    const title = (x.b?.title || x.a?.title || "");
+    return `<tr data-diffid="${esc(x.id)}">
+      <td><span class="badge ${x.type==="removed"?"r":x.type==="new"?"k":"w"}">${esc(label)}</span></td>
+      <td><span class="mono">${esc(x.id)}</span></td>
+      <td>${esc(changes)}</td>
+      <td>${esc(title)}</td>
+    </tr>`;
+  }).join("");
+
+  $$("tr[data-diffid]", tb).forEach(tr=>{
+    tr.addEventListener("click", ()=>{
+      const id = tr.dataset.diffid;
+      showDiffDetail(id);
+    });
+  });
+}
+
+function showDiffDetail(id){
+  const item = DIFF.byId.get(id);
+  if(!item) return;
+  const d = $("#diffDetail");
+  const a = item.a;
+  const b = item.b;
+  if(item.type==="new"){
+    d.innerHTML = `<div style="font-weight:750;">NEW: ${esc(id)}</div>
+      <div class="small muted">${esc(b.title||"")}</div>
+      <details class="acc" open><summary>B statement</summary><div class="accBody"><pre class="code">${esc(b.statement||"")}</pre></div></details>
+      <details class="acc"><summary>B guidance</summary><div class="accBody"><pre class="code">${esc(b.guidance||"")}</pre></div></details>`;
+  }else if(item.type==="removed"){
+    d.innerHTML = `<div style="font-weight:750;">REMOVED: ${esc(id)}</div>
+      <div class="small muted">${esc(a.title||"")}</div>
+      <details class="acc" open><summary>A statement</summary><div class="accBody"><pre class="code">${esc(a.statement||"")}</pre></div></details>
+      <details class="acc"><summary>A guidance</summary><div class="accBody"><pre class="code">${esc(a.guidance||"")}</pre></div></details>`;
+  }else{
+    d.innerHTML = `<div style="font-weight:750;">CHANGED: ${esc(id)}</div>
+      <div class="small muted">${esc((b.title||a.title||""))}</div>
+      <div class="small">Changes: <span class="mono">${esc((item.changes||[]).join(", "))}</span></div>
+
+      <details class="acc" open><summary>Statement (A vs B)</summary>
+        <div class="accBody">${diffBlock(a.statement||"", b.statement||"")}</div>
+      </details>
+      <details class="acc"><summary>Guidance (A vs B)</summary>
+        <div class="accBody">${diffBlock(a.guidance||"", b.guidance||"")}</div>
+      </details>
+      <details class="acc"><summary>Props</summary>
+        <div class="accBody">
+          <div class="kv">
+            <div class="k">sec_level</div><div class="v"><span class="mono">${esc(a.sec_level||"")}</span> → <span class="mono">${esc(b.sec_level||"")}</span></div>
+            <div class="k">effort_level</div><div class="v"><span class="mono">${esc(a.effort_level||"")}</span> → <span class="mono">${esc(b.effort_level||"")}</span></div>
+            <div class="k">class</div><div class="v"><span class="mono">${esc(a.class||"")}</span> → <span class="mono">${esc(b.class||"")}</span></div>
+          </div>
+        </div>
+      </details>
+    `;
+  }
+}
+
+function diffBlock(a,b){
+  // naive line diff with markers
+  const A = String(a).split("\n");
+  const B = String(b).split("\n");
+  const max = Math.max(A.length, B.length);
+  let out = `<div class="code" style="white-space:pre-wrap;">`;
+  for(let i=0;i<max;i++){
+    const la = A[i]??"";
+    const lb = B[i]??"";
+    if(la===lb){
+      out += `<div><span class="muted">  </span>${esc(la)}</div>`;
+    }else{
+      if(la) out += `<div style="background: rgba(255,106,106,.08);"><span class="mono">- </span>${esc(la)}</div>`;
+      if(lb) out += `<div style="background: rgba(124,255,138,.06);"><span class="mono">+ </span>${esc(lb)}</div>`;
+    }
+    if(i>240){ out += `<div class="muted">… truncated …</div>`; break; }
+  }
+  out += `</div>`;
+  return out;
+}
+
+/* ---------- Deep-link parsing ---------- */
+function parseHash(){
+  const h = (location.hash||"").replace(/^#/, "");
+  if(!h) return;
+
+  const params = new URLSearchParams(h);
+  const id = params.get("id");
+  const alias = params.get("alias");
+  const group = params.get("group");
+  const param = params.get("param");
+  const rel = params.get("rel");
+
+  if(alias && IDX?.byAlias){
+    const mapped = IDX.byAlias.get(alias) || IDX.byAlias.get(alias.replace(/^#/, ""));
+    if(mapped && IDX.byId.has(mapped)){
+      ACTIVE_ID = mapped;
+      WS.lastHash = `#id=${encodeURIComponent(mapped)}`;
+      saveWS();
+      renderTree();
+      renderDetail();
+      return;
+    }
+  }
+
+  if(id && IDX?.byId?.has(id)){
+    ACTIVE_ID = id;
+    // optional param/rel deep links
+    if(param) ACTIVE_PARAM = param;
+    if(rel) ACTIVE_REL = {rel, fromId:id};
+    WS.lastHash = location.hash;
+    saveWS();
+    renderTree();
+    renderDetail();
+
+    // if param deep-link -> open params accordion and scroll
+    if(param){
+      setTimeout(()=>{
+        const acc = $$("details.acc", $("#detail")).find(d=>d.querySelector("summary")?.textContent?.includes("Params"));
+        if(acc){ acc.open = true; }
+        // find param row
+        const row = $$("table.table tbody tr", $("#detail")).find(tr=>tr.innerText?.includes(param));
+        if(row) row.scrollIntoView({behavior:"smooth", block:"center"});
+      }, 50);
+    }
+    // if rel deep-link -> open relationships accordion and try to emphasize rel
+    if(rel){
+      setTimeout(()=>{
+        const acc = $$("details.acc", $("#detail")).find(d=>d.querySelector("summary")?.textContent?.includes("Relationships"));
+        if(acc){ acc.open = true; }
+        // highlight rel in outgoing table
+        $$("a.relLink", $("#detail")).forEach(a=>{
+          if((a.dataset.rel||"")===rel){
+            a.style.textDecoration = "underline";
+            a.style.textDecorationThickness = "2px";
+          }
+        });
+      }, 50);
+    }
+    return;
+  }
+
+  if(group){
+    // Switch to OSCAL grouping and expand group
+    $("#groupMode").value = "oscal";
+    expandGroupById(group);
+    applyFilters();
+    toast(`Group ${esc(group)}`);
+    return;
+  }
+}
+
+function expandGroupById(groupId){
+  if(!IDX) return;
+  // find any control that has this groupId in its groupPath
+  const c = IDX.controls.find(c=> (c.groupPath||[]).some(g=>g.id===groupId));
+  if(!c){ toast(`Group ${esc(groupId)} nicht gefunden`, 2400); return; }
+  // build expanded keys along path
+  let key = "root";
+  for(const seg of (c.groupPath||[])){
+    key = `${key}/${seg.id||seg.title||""}`;
+    WS.expanded[key] = true;
+    if(seg.id===groupId) break;
+  }
+  saveWS();
+  // Scroll group row into view after render
+  setTimeout(()=>{
+    const row = $(`.treeRow[data-kind="group"][data-gid="${CSS.escape(groupId)}"]`);
+    row?.scrollIntoView({behavior:"smooth", block:"center"});
+    row?.classList?.add("active");
+    setTimeout(()=>row?.classList?.remove("active"), 1500);
+  }, 50);
+}
+
+function updateDeepLinkBadge(){
+  // no-op placeholder (could show current hash)
+}
+
+/* ---------- Load catalog ---------- */
+async function fetchJSON(url){
+  const raw = toRaw(url);
+  const res = await fetch(raw, {cache:"no-store"});
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+function setMetadata(idx, sourceUrl=""){
+  const md = idx.cat?.metadata || {};
+  $("#docTitle").textContent = md.title || "(untitled)";
+  $("#oscalVersion").textContent = idx.cat?.oscal_version || idx.cat?.oscalVersion || md.oscal_version || "—";
+  $("#docVersion").textContent = md.version || "—";
+  $("#lastModified").textContent = md.last_modified || md.lastModified || "—";
+  $("#sourceLink").textContent = sourceUrl ? sourceUrl : "—";
+  $("#sourceLink").href = sourceUrl ? sourceUrl : "#";
+}
+
+function populateFilters(idx){
+  // sec/eff/class
+  const sec = $("#secLevel");
+  const eff = $("#effortLevel");
+  const cls = $("#classFilter");
+  sec.innerHTML = `<option value="">(alle)</option>` + idx.secVals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+  eff.innerHTML = `<option value="">(alle)</option>` + idx.effVals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+  cls.innerHTML = `<option value="">(alle)</option>` + idx.clsVals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+
+  // keyword datalist
+  const dl = $("#kwList");
+  dl.innerHTML = idx.keywords.map(w=>`<option value="${esc(w)}"></option>`).join("");
+
+  // relationship rel select
+  const relSel = $("#mapRel");
+  const relSel2 = $("#traceRel");
+  relSel.innerHTML = `<option value="">rel: any</option>` + idx.relVals.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join("");
+  relSel2.innerHTML = `<option value="">rel: any</option>` + idx.relVals.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join("");
+}
+
+/* ---------- Wire UI ---------- */
+function bindUI(){
+  // tabs
+  $$(".tab").forEach(b=>{
+    b.addEventListener("click", ()=> setTab(b.dataset.tab));
+  });
+
+  $("#helpBtn").onclick = ()=>$("#helpModal").classList.add("show");
+  $("#helpCloseBtn").onclick = ()=>$("#helpModal").classList.remove("show");
+  $("#helpModal").addEventListener("click", (e)=>{
+    if(e.target===$("#helpModal")) $("#helpModal").classList.remove("show");
+  });
+
+  $("#dashBtn").onclick = ()=> setTab("dashboard");
+  $("#wsBtn").onclick = ()=> setTab("workspace");
+
+  // highlight nav
+  $("#nextHlBtn").onclick = ()=> nextHighlight(1);
+  $("#prevHlBtn").onclick = ()=> nextHighlight(-1);
+
+  // filters
+  ["secLevel","effortLevel","classFilter","keyword","query","groupMode","sortBy","mapScope","mapRel","dashScope"].forEach(id=>{
+    const el = $("#"+id);
+    if(el) el.addEventListener("change", applyFilters);
+  });
+  $("#keyword").addEventListener("input", ()=>{ clearTimeout(window._kwT); window._kwT=setTimeout(applyFilters, 150); });
+  $("#query").addEventListener("input", ()=>{ clearTimeout(window._qT); window._qT=setTimeout(applyFilters, 160); });
+
+  // toggles
+  $("#compactBtn").onclick = ()=>{ setToggle($("#compactBtn"), $("#compactBtn").getAttribute("aria-pressed")!=="true"); applyFilters(); };
+  $("#snippetBtn").onclick = ()=>{ setToggle($("#snippetBtn"), $("#snippetBtn").getAttribute("aria-pressed")!=="true"); applyFilters(); };
+  $("#selModeBtn").onclick = ()=>{ setToggle($("#selModeBtn"), $("#selModeBtn").getAttribute("aria-pressed")!=="true"); applyFilters(); };
+  $("#sortDirBtn").onclick = ()=>{ setToggle($("#sortDirBtn"), $("#sortDirBtn").getAttribute("aria-pressed")!=="true"); applyFilters(); };
+
+  $("#clearBtn").onclick = ()=>{
+    $("#secLevel").value="";
+    $("#effortLevel").value="";
+    $("#classFilter").value="";
+    $("#keyword").value="";
+    $("#query").value="";
+    $("#sortBy").value="original";
+    setToggle($("#sortDirBtn"), false);
+    applyFilters();
+    toast("Reset done");
+  };
+
+  // selection actions
+  $("#selClearBtn").onclick = ()=>{ clearSelection(); toast("Selection cleared"); };
+  $("#exportProfileBtn").onclick = exportProfileSkeleton;
+  $("#exportMiniCatBtn").onclick = exportMiniCatalog;
+  $("#copySelBtn").onclick = ()=>{
+    const sel = getSelection().join("\n");
+    navigator.clipboard?.writeText(sel);
+    toast(`Copied ${getSelection().length} IDs`);
+  };
+  $("#selSelectVisibleBtn").onclick = ()=>{
+    const sel = new Set(getSelection());
+    for(const c of FILTERED) sel.add(c.id);
+    WS.selection = Array.from(sel).sort((a,b)=>a.localeCompare(b, undefined, {numeric:true}));
+    saveWS();
+    refreshSelectedPanel();
+    renderTree();
+    toast(`Added ${FILTERED.length} visible`);
+  };
+  $("#selRemoveInvisibleBtn").onclick = ()=>{
+    WS.selection = getSelection().filter(id=>IDX.byId.has(id));
+    saveWS();
+    refreshSelectedPanel();
+    renderTree();
+    toast("Pruned selection");
+  };
+
+  // mapping actions
+  $("#mapRefreshBtn").onclick = refreshMapping;
+  $("#traceBtn").onclick = ()=>{
+    const from = $("#traceFrom").value;
+    const to = $("#traceTo").value;
+    const depth = parseInt($("#traceDepth").value, 10);
+    const rel = $("#traceRel").value;
+    if(from===to){ $("#traceOut").textContent="From==To"; return; }
+    const paths = findPathsBFS(from,to,depth, rel);
+    $("#traceHint").textContent = `${paths.length} paths (limit 25)`;
+    if(paths.length===0){
+      $("#traceOut").textContent = "No path found.";
+    }else{
+      $("#traceOut").innerHTML = paths.map(p=>{
+        const parts = p.map(id=>`<a class="link" href="#id=${encodeURIComponent(id)}">${esc(id)}</a>`).join(" → ");
+        return `<div style="margin-bottom:6px;">${parts}</div>`;
+      }).join("");
+    }
+  };
+
+  // dashboard actions
+  $("#dashRefreshBtn").onclick = refreshDashboard;
+  $("#dupBtn").onclick = ()=>{ computeNearDuplicates(); toast("Near-duplicates computed", 2000); };
+
+  // lint actions
+  $("#lintRefreshBtn").onclick = refreshLint;
+  $("#lintFilter").onchange = renderLint;
+
+  // diff actions
+  $("#diffLoadBtn").onclick = async ()=>{
+    const url = $("#diffUrl").value.trim();
+    if(!url){ toast("No URL"); return; }
+    $("#diffStatus").textContent = "B: loading…";
+    try{
+      CATALOG_B = await fetchJSON(url);
+      DIFF = computeDiff(CATALOG_A, CATALOG_B);
+      $("#diffStatus").textContent = "B: loaded";
+      toast("Catalog B loaded");
+      refreshDiffTable();
+    }catch(e){
+      $("#diffStatus").textContent = "B: error";
+      toast(`Diff load error: ${esc(e.message)}`, 3000);
+    }
+  };
+  $("#diffUploadBtn").onclick = ()=> $("#diffFile").click();
+  $("#diffFile").addEventListener("change", async (e)=>{
+    const file = e.target.files?.[0];
+    if(!file) return;
+    $("#diffStatus").textContent = "B: reading…";
+    try{
+      const txt = await file.text();
+      CATALOG_B = JSON.parse(txt);
+      DIFF = computeDiff(CATALOG_A, CATALOG_B);
+      $("#diffStatus").textContent = "B: loaded";
+      toast("Catalog B loaded (file)");
+      refreshDiffTable();
+    }catch(err){
+      $("#diffStatus").textContent = "B: error";
+      toast(`Diff parse error`, 3000);
+    }
+    e.target.value="";
+  });
+  $("#diffSearch").addEventListener("input", ()=>{ clearTimeout(window._dsT); window._dsT=setTimeout(refreshDiffTable, 140); });
+  ["diffShowNew","diffShowRemoved","diffShowChanged"].forEach(id=>{
+    $("#"+id).onclick = ()=>{
+      setToggle($("#"+id), $("#"+id).getAttribute("aria-pressed")!=="true");
+      refreshDiffTable();
+    };
+  });
+
+  // workspace actions
+  $("#wsExportBtn").onclick = ()=>{
+    saveUIToWS();
+    exportJSON(WS, `workspace-gspp-oscal-v4-${nowISO()}.json`);
+  };
+  $("#wsImportBtn").onclick = ()=> $("#wsFile").click();
+  $("#wsFile").addEventListener("change", async (e)=>{
+    const file = e.target.files?.[0];
+    if(!file) return;
+    try{
+      const txt = await file.text();
+      const obj = JSON.parse(txt);
+      WS = deepMerge(defaultWS(), obj);
+      saveWS();
+      restoreUIFromWS();
+      applyFilters();
+      toast("Workspace imported");
+    }catch(err){
+      toast("Workspace import failed", 2800);
+    }
+    e.target.value="";
+  });
+  $("#wsClearBtn").onclick = ()=>{
+    if(confirm("Workspace wirklich löschen? (localStorage)")){
+      clearWS();
+      restoreUIFromWS();
+      applyFilters();
+      toast("Workspace cleared");
+    }
+  };
+
+  // loading
+  $("#loadBtn").onclick = async ()=>{ await loadFromUrl(); };
+  $("#uploadBtn").onclick = ()=> $("#file").click();
+  $("#file").addEventListener("change", async (e)=>{
+    const file = e.target.files?.[0];
+    if(!file) return;
+    setStatus("reading file…");
+    try{
+      const txt = await file.text();
+      const json = JSON.parse(txt);
+      await loadCatalog(json, "(uploaded file)");
+      toast("Catalog loaded (file)");
+    }catch(err){
+      toast("Upload parse error", 3000);
+    }
+    setStatus("ready");
+    e.target.value="";
+  });
+
+  // keyboard shortcuts
+  window.addEventListener("keydown", (e)=>{
+    if(e.key==="/" && document.activeElement?.tagName!=="INPUT" && document.activeElement?.tagName!=="TEXTAREA"){
+      e.preventDefault();
+      $("#query").focus();
+      return;
+    }
+    if(e.key==="Escape"){
+      $("#helpModal").classList.remove("show");
+      $("#tooltip").style.display="none";
+    }
+    if(e.key==="n"){
+      if(currentTab()==="detail"){ nextHighlight(1); }
+    }
+    if(e.key==="p"){
+      if(currentTab()==="detail"){ nextHighlight(-1); }
+    }
+  });
+
+  // hash change
+  window.addEventListener("hashchange", ()=>{ parseHash(); });
+
+  // clicks on links in detail that should not navigate full page
+  document.body.addEventListener("click", (e)=>{
+    const a = e.target?.closest?.("a.link");
+    if(a && a.getAttribute("href")?.startsWith("#")){
+      // allow default hash navigation
+    }
+  });
+}
+
+/* ---------- Load flow ---------- */
+async function loadFromUrl(){
+  const url = $("#url").value.trim();
+  if(!url){ toast("No URL"); return; }
+  WS.lastUrl = url;
+  saveWS();
+  setStatus("loading…");
+  try{
+    const json = await fetchJSON(url);
+    await loadCatalog(json, url);
+    toast("Catalog loaded");
+  }catch(err){
+    toast(`Load error: ${esc(err.message)}`, 3200);
+  }finally{
+    setStatus("ready");
+  }
+}
+
+async function loadCatalog(json, sourceUrl){
+  CATALOG_A = json;
+  IDX = buildIndex(json);
+  setMetadata(IDX, sourceUrl);
+  populateFilters(IDX);
+
+  // Apply WS restore (filters etc.) after populating selects
+  restoreUIFromWS();
+
+  // default list
+  FILTERED = IDX.controls.slice();
+
+  // render
+  applyFilters();
+
+  // Parse hash deep-link (id/group/alias)
+  parseHash();
+
+  // initial selected count
+  $("#selectedCount").textContent = String(getSelection().length);
+  $("#brokenCount").textContent = String(IDX.broken.length);
+
+  // prepare trace selects
+  fillTraceSelects();
+
+  // lint initial
+  refreshLint();
+}
+
+
+/* ============================
+   v5-final additions
+   - IndexedDB offline cache
+   - Web Worker TF‑IDF similarity (keeps heavy vectors off the main thread)
+   - Resources browser (back-matter) + explainable href resolution
+   - Review mode workflow + Markdown/CSV exports
+   ============================ */
+
+/* ---------- Download / clipboard helpers ---------- */
+function downloadText(filename, text, mime="text/plain"){
+  try{
+    const blob = new Blob([text], {type: mime});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 0);
+  }catch(err){
+    toast(`Download failed: ${esc(err.message)}`, 3200);
+  }
+}
+async function copyText(text){
+  try{
+    await navigator.clipboard?.writeText(text);
+    toast("Copied", 1600);
+  }catch(_){
+    toast("Copy failed (clipboard permission?)", 2600);
+  }
+}
+
+/* ---------- IndexedDB cache ---------- */
+const CACHE_DB = "gspp_oscal_cache_v1";
+const CACHE_STORE = "catalogs";
+let _cacheDbP = null;
+
+function openCacheDB(){
+  if(_cacheDbP) return _cacheDbP;
+  _cacheDbP = new Promise((resolve, reject)=>{
+    if(!("indexedDB" in window)){ resolve(null); return; }
+    const req = indexedDB.open(CACHE_DB, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(CACHE_STORE)){
+        db.createObjectStore(CACHE_STORE, {keyPath:"src"});
+      }
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  return _cacheDbP;
+}
+function approxSize(obj){
+  try{ return JSON.stringify(obj).length; }catch(_){ return 0; }
+}
+function fmtBytes(n){
+  const x = Number(n)||0;
+  if(x < 1024) return `${x} B`;
+  if(x < 1024*1024) return `${(x/1024).toFixed(1)} KB`;
+  return `${(x/(1024*1024)).toFixed(1)} MB`;
+}
+async function cacheGet(src){
+  try{
+    const db = await openCacheDB();
+    if(!db) return null;
+    return await new Promise((resolve, reject)=>{
+      const tx = db.transaction(CACHE_STORE, "readonly");
+      const req = tx.objectStore(CACHE_STORE).get(src);
+      req.onsuccess = ()=> resolve(req.result || null);
+      req.onerror = ()=> reject(req.error);
+    });
+  }catch(_){ return null; }
+}
+async function cachePut(src, json, meta={}, info={}){
+  try{
+    const db = await openCacheDB();
+    if(!db) return;
+    const rec = {
+      src,
+      savedAt: new Date().toISOString(),
+      meta,
+      info,
+      json
+    };
+    await new Promise((resolve, reject)=>{
+      const tx = db.transaction(CACHE_STORE, "readwrite");
+      tx.objectStore(CACHE_STORE).put(rec);
+      tx.oncomplete = ()=> resolve();
+      tx.onerror = ()=> reject(tx.error);
+    });
+  }catch(_){}
+}
+async function cacheList(){
+  try{
+    const db = await openCacheDB();
+    if(!db) return [];
+    return await new Promise((resolve, reject)=>{
+      const tx = db.transaction(CACHE_STORE, "readonly");
+      const req = tx.objectStore(CACHE_STORE).getAll();
+      req.onsuccess = ()=> resolve(req.result || []);
+      req.onerror = ()=> reject(req.error);
+    });
+  }catch(_){ return []; }
+}
+async function cacheClear(){
+  try{
+    const db = await openCacheDB();
+    if(!db) return;
+    await new Promise((resolve, reject)=>{
+      const tx = db.transaction(CACHE_STORE, "readwrite");
+      tx.objectStore(CACHE_STORE).clear();
+      tx.oncomplete = ()=> resolve();
+      tx.onerror = ()=> reject(tx.error);
+    });
+  }catch(_){}
+}
+async function refreshCachePanel(){
+  if(!$("#cacheTable")) return;
+  // reflect WS
+  $("#cachePolicy").value = WS.ui.cachePolicy || "network";
+  $("#reviewerName").value = WS.ui.reviewerName || "";
+  const list = (await cacheList()).sort((a,b)=> String(b.savedAt||"").localeCompare(String(a.savedAt||"")));
+  $("#cacheInfo").textContent = String(list.length);
+  const tb = $("#cacheTable tbody");
+  tb.innerHTML = "";
+  for(const rec of list){
+    const info = rec.info || {};
+    const saved = (rec.savedAt||"").replace("T"," ").slice(0,19);
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td class="mono" title="${esc(rec.src||"")}">${esc((rec.src||"").slice(0,80))}${(rec.src||"").length>80?"…":""}</td>
+      <td>${esc(saved||"")}</td>
+      <td>${esc(info.controls ?? "")}</td>
+      <td>${esc(fmtBytes(info.size ?? approxSize(rec.json)))}</td>
+    `;
+    row.addEventListener("click", ()=>{
+      // Convenience: put raw URL into the URL field
+      $("#url").value = rec.src || "";
+      toast("Cache source copied to URL field (raw). Click Load.", 2200);
+    });
+    tb.appendChild(row);
+  }
+}
+async function fetchJSONWithMeta(url){
+  const raw = toRaw(url);
+  const res = await fetch(raw, {cache:"no-store"});
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const meta = {
+    rawUrl: raw,
+    etag: res.headers.get("etag") || "",
+    lastModified: res.headers.get("last-modified") || "",
+    contentType: res.headers.get("content-type") || ""
+  };
+  const json = await res.json();
+  return {json, meta, raw};
+}
+
+/* ---------- Web Worker TF‑IDF service ---------- */
+let TF = {
+  worker: null,
+  ready: false,
+  seq: 1,
+  pending: new Map()
+};
+
+function makeTfidfWorker(){
+  const code = `
+  let ITEMS = [];
+  let BY_ID = new Map();
+  let MODES = {}; // mode -> {vec: Map(id->Map(term->w)), norm: Map(id->number)}
+  const STOP = new Set(["und","oder","der","die","das","ein","eine","mit","für","von","in","im","auf","an","zu","ist","sind","nicht","den","des","dem","bei","als","auch","nur","mehr","weniger","kann","soll","muss","müssen","können","sollen","werden","wird","durch","this","that","the","and","or","to","of","in","on","for","with","as","be","are","is"]);
+  function tokenize(txt){
+    return String(txt||"").toLowerCase()
+      .split(/[^a-z0-9äöüß]+/i)
+      .filter(w=>w.length>=4 && !STOP.has(w));
+  }
+  function build(mode){
+    const docs = [];
+    for(const it of ITEMS){
+      const text = (mode==="statement") ? it.statement
+                 : (mode==="guidance") ? it.guidance
+                 : (it.title + " " + it.statement + " " + it.guidance);
+      const toks = tokenize(text);
+      docs.push({id: it.id, toks});
+    }
+    // df
+    const df = new Map();
+    for(const d of docs){
+      const u = new Set(d.toks);
+      for(const t of u) df.set(t, (df.get(t)||0)+1);
+    }
+    const N = docs.length || 1;
+    const idf = new Map();
+    for(const [t,n] of df.entries()){
+      idf.set(t, Math.log((N+1)/(n+1)) + 1);
+    }
+    const vec = new Map();
+    const norm = new Map();
+    for(const d of docs){
+      const tf = new Map();
+      for(const t of d.toks) tf.set(t, (tf.get(t)||0)+1);
+      const maxTf = Math.max(1, ...tf.values());
+      const v = new Map();
+      let ss = 0;
+      for(const [t,n] of tf.entries()){
+        const w = (n/maxTf) * (idf.get(t)||1);
+        v.set(t,w);
+        ss += w*w;
+      }
+      vec.set(d.id, v);
+      norm.set(d.id, Math.sqrt(ss));
+    }
+    return {vec, norm};
+  }
+  function cosine(vA, nA, vB, nB){
+    if(!vA || !vB) return 0;
+    const a = vA.size <= vB.size ? vA : vB;
+    const b = vA.size <= vB.size ? vB : vA;
+    let dot = 0;
+    for(const [t,w] of a.entries()){
+      const wb = b.get(t);
+      if(wb) dot += w*wb;
+    }
+    if(!nA || !nB) return 0;
+    return dot / (nA*nB);
+  }
+  function topTerm(v){
+    let best=null, bw=-Infinity;
+    for(const [t,w] of v.entries()){
+      if(w > bw){ bw=w; best=t; }
+    }
+    return best || "(none)";
+  }
+  function similarFor(id, mode, limit, minScore){
+    const m = MODES[mode] || MODES["all"];
+    if(!m) return [];
+    const v0 = m.vec.get(id);
+    const n0 = m.norm.get(id);
+    if(!v0 || !n0) return [];
+    const out = [];
+    for(const other of ITEMS){
+      const oid = other.id;
+      if(oid === id) continue;
+      const v = m.vec.get(oid);
+      const n = m.norm.get(oid);
+      const s = cosine(v0, n0, v, n);
+      if(s >= minScore) out.push({id: oid, score: s});
+    }
+    out.sort((a,b)=>b.score-a.score);
+    return out.slice(0, Math.max(0, limit||10));
+  }
+  function nearDuplicates(ids, threshold){
+    const thr = Number(threshold)||0.82;
+    const all = MODES["all"]; const st = MODES["statement"]; const gu = MODES["guidance"];
+    if(!all || !st || !gu) return [];
+    const set = new Set(ids||[]);
+    const list = (ids && ids.length) ? ids.filter(x=>set.has(x)) : ITEMS.map(x=>x.id);
+    // bucket by top term to reduce comparisons
+    const buckets = new Map();
+    for(const id of list){
+      const v = all.vec.get(id);
+      if(!v) continue;
+      const key = topTerm(v);
+      if(!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(id);
+    }
+    const pairs = [];
+    for(const ids2 of buckets.values()){
+      for(let i=0;i<ids2.length;i++){
+        for(let j=i+1;j<ids2.length;j++){
+          const a = ids2[i], b = ids2[j];
+          const sAll = cosine(all.vec.get(a), all.norm.get(a), all.vec.get(b), all.norm.get(b));
+          if(sAll >= thr){
+            const sSt = cosine(st.vec.get(a), st.norm.get(a), st.vec.get(b), st.norm.get(b));
+            const sGu = cosine(gu.vec.get(a), gu.norm.get(a), gu.vec.get(b), gu.norm.get(b));
+            pairs.push({a,b, sAll, sSt, sGu});
+          }
+        }
+      }
+    }
+    pairs.sort((x,y)=> y.sAll - x.sAll);
+    return pairs;
+  }
+
+  onmessage = (e)=>{
+    const msg = e.data || {};
+    if(msg.type === "init"){
+      ITEMS = Array.isArray(msg.items) ? msg.items : [];
+      BY_ID = new Map();
+      for(const it of ITEMS) BY_ID.set(it.id, it);
+      MODES = {
+        all: build("all"),
+        statement: build("statement"),
+        guidance: build("guidance")
+      };
+      postMessage({type:"ready", count: ITEMS.length});
+      return;
+    }
+    const reqId = msg.reqId;
+    try{
+      if(msg.type === "similar"){
+        const id = msg.id;
+        const mode = msg.mode || "all";
+        const limit = msg.limit || 10;
+        const minScore = msg.minScore || 0.1;
+        const results = similarFor(id, mode, limit, minScore);
+        postMessage({type:"similar", reqId, results});
+        return;
+      }
+      if(msg.type === "near_dups"){
+        const pairs = nearDuplicates(msg.ids||[], msg.threshold);
+        postMessage({type:"near_dups", reqId, pairs});
+        return;
+      }
+      postMessage({type:"error", reqId, error:"unknown message"});
+    }catch(err){
+      postMessage({type:"error", reqId, error:String(err && err.message || err)});
+    }
+  };
+  `;
+  const blob = new Blob([code], {type:"application/javascript"});
+  return new Worker(URL.createObjectURL(blob));
+}
+
+function tfReset(){
+  try{ TF.worker?.terminate(); }catch(_){}
+  TF.worker = null;
+  TF.ready = false;
+  TF.seq = 1;
+  TF.pending = new Map();
+}
+function tfRequest(type, payload){
+  if(!TF.worker) return Promise.reject(new Error("TF worker not available"));
+  const reqId = TF.seq++;
+  return new Promise((resolve, reject)=>{
+    TF.pending.set(reqId, {resolve, reject});
+    TF.worker.postMessage({type, reqId, ...payload});
+    // timeout guard
+    setTimeout(()=>{
+      if(TF.pending.has(reqId)){
+        TF.pending.delete(reqId);
+        reject(new Error("TF request timeout"));
+      }
+    }, 120000);
+  }).then(msg=>{
+    if(msg.type==="error") throw new Error(msg.error||"worker error");
+    return msg;
+  });
+}
+async function tfInit(controls){
+  if(!("Worker" in window)){ TF.ready=false; return false; }
+  tfReset();
+  TF.worker = makeTfidfWorker();
+  TF.worker.onmessage = (e)=>{
+    const msg = e.data || {};
+    if(msg.type==="ready"){ TF.ready = true; return; }
+    const reqId = msg.reqId;
+    if(reqId && TF.pending.has(reqId)){
+      TF.pending.get(reqId).resolve(msg);
+      TF.pending.delete(reqId);
+    }
+  };
+  TF.worker.onerror = (e)=>{
+    console.warn("TF worker error", e);
+  };
+  const items = (controls||[]).map(c=>({
+    id: c.id,
+    title: c.title || "",
+    statement: c.statement || "",
+    guidance: c.guidance || ""
+  }));
+  TF.worker.postMessage({type:"init", items});
+  return true;
+}
+async function tfSimilar(id, mode="all", limit=12, minScore=0.12){
+  const msg = await tfRequest("similar", {id, mode, limit, minScore});
+  return msg.results || [];
+}
+async function tfNearDuplicates(ids, threshold=0.82){
+  const msg = await tfRequest("near_dups", {ids, threshold});
+  return msg.pairs || [];
+}
+
+/* ---------- Resources: reference index + UI ---------- */
+let ACTIVE_RESOURCE = null;
+
+function buildResourceRefs(){
+  if(!IDX) return;
+  const refs = new Map(); // uuid -> [{fromId, rel, href}]
+  for(const [fromId, outs] of IDX.outgoing.entries()){
+    for(const o of outs){
+      if(o.targetType==="resource" && o.targetId){
+        if(!refs.has(o.targetId)) refs.set(o.targetId, []);
+        refs.get(o.targetId).push({fromId, rel:o.rel||"", href:o.href||""});
+      }
+    }
+  }
+  IDX.resourceRefs = refs;
+}
+function openResource(uuid){
+  if(!IDX?.resources?.has(uuid)){ toast(`Resource ${esc(uuid)} not found`, 2400); return; }
+  ACTIVE_RESOURCE = uuid;
+  WS.lastHash = `#resource=${encodeURIComponent(uuid)}`;
+  saveWS();
+  updateHash();
+  setTab("resources");
+  renderResourceDetail(uuid);
+}
+function renderResourceDetail(uuid){
+  const card = $("#resDetailCard");
+  if(!card) return;
+  const r = IDX.resources.get(uuid);
+  if(!r){ card.hidden=true; return; }
+  card.hidden = false;
+  $("#resDetailId").textContent = uuid;
+  $("#resDetailTitle").innerHTML = esc(r.title || r.name || "(no title)");
+  // links
+  const rlinks = Array.isArray(r.rlinks) ? r.rlinks : (Array.isArray(r.rlink)? r.rlink : []);
+  const links = rlinks.map(l=>{
+    const href = l?.href || "";
+    const t = l?.media_type || l?.mediaType || l?.type || "";
+    const label = href ? href : "(href)";
+    return href ? `<div><a class="link" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a> ${t?`<span class="pill"><strong>type</strong> ${esc(t)}</span>`:""}</div>` : "";
+  }).join("") || `<span class="muted">(none)</span>`;
+  $("#resDetailLinks").innerHTML = links;
+
+  // citation
+  const cit = r.citation || r.cite || null;
+  let citTxt = "";
+  if(cit?.text) citTxt = cit.text;
+  if(!citTxt && typeof cit === "string") citTxt = cit;
+  $("#resDetailCitation").innerHTML = citTxt ? `<div class="prose">${esc(citTxt)}</div>` : `<span class="muted">(none)</span>`;
+
+  // references
+  const refs = (IDX.resourceRefs?.get(uuid) || []);
+  $("#resDetailRefs").innerHTML = refs.length ? refs.slice(0,200).map(x=>{
+    return `<div><a class="link" href="#id=${encodeURIComponent(x.fromId)}">${esc(x.fromId)}</a> <span class="mono">${esc(x.rel||"")}</span> <span class="mono">${esc(x.href||"")}</span></div>`;
+  }).join("") : `<span class="muted">(unreferenced)</span>`;
+
+  $("#resDetailRaw").textContent = JSON.stringify(r, null, 2);
+
+  $("#resDetailCloseBtn").onclick = ()=>{
+    ACTIVE_RESOURCE = null;
+    card.hidden = true;
+  };
+  $("#resOpenDeepLinkBtn").onclick = ()=>{
+    const link = `${location.origin}${location.pathname}#resource=${encodeURIComponent(uuid)}`;
+    copyText(link);
+  };
+}
+function refreshResources(){
+  if(!IDX){ return; }
+  const q = ($("#resSearch").value||"").trim().toLowerCase();
+  const show = ($("#resShow").value||"all");
+  const rows = [];
+  for(const [uuid, r] of IDX.resources.entries()){
+    const title = String(r?.title || r?.name || "");
+    const refs = IDX.resourceRefs?.get(uuid)?.length || 0;
+    if(show==="referenced" && refs===0) continue;
+    if(show==="unreferenced" && refs>0) continue;
+    // simple search across uuid/title/rlinks
+    if(q){
+      let hit = uuid.toLowerCase().includes(q) || title.toLowerCase().includes(q);
+      if(!hit){
+        const rlinks = Array.isArray(r?.rlinks) ? r.rlinks : [];
+        hit = rlinks.some(l=> String(l?.href||"").toLowerCase().includes(q));
+      }
+      if(!hit) continue;
+    }
+    // links summary
+    const rlinks = Array.isArray(r?.rlinks) ? r.rlinks : [];
+    const linkCount = rlinks.length;
+    rows.push({uuid, title, linkCount, refs});
+  }
+  rows.sort((a,b)=> b.refs-a.refs || a.uuid.localeCompare(b.uuid));
+  $("#resCount").textContent = String(rows.length);
+  const tb = $("#resTable tbody");
+  tb.innerHTML = "";
+  for(const row of rows){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono"><a class="link" href="#resource=${encodeURIComponent(row.uuid)}">${esc(row.uuid)}</a></td>
+      <td>${esc(row.title||"(no title)")}</td>
+      <td>${row.linkCount? esc(String(row.linkCount)):""}</td>
+      <td>${esc(String(row.refs))}</td>
+    `;
+    tr.addEventListener("click", (e)=>{
+      // allow ctrl/alt click to not navigate
+      openResource(row.uuid);
+    });
+    tb.appendChild(tr);
+  }
+  // keep detail if active
+  if(ACTIVE_RESOURCE && IDX.resources.has(ACTIVE_RESOURCE)){
+    renderResourceDetail(ACTIVE_RESOURCE);
+  }
+}
+
+/* ---------- Review mode + exports ---------- */
+function noteDefaults(){
+  return {
+    status: "",
+    tags: [],
+    notes: "",
+    decision: "",
+    date: "",
+    evidence: [],
+    reviewState: "unreviewed", // unreviewed|reviewed|needs-work|blocked
+    reviewer: "",
+    reviewedAt: ""
+  };
+}
+function getNote(id){
+  const n = WS.notes[id];
+  if(!n) return noteDefaults();
+  return Object.assign(noteDefaults(), n);
+}
+function reviewPill(state){
+  const s = state || "unreviewed";
+  if(s==="reviewed") return `<span class="pill ok"><strong>review</strong> reviewed</span>`;
+  if(s==="needs-work") return `<span class="pill"><strong>review</strong> needs-work</span>`;
+  if(s==="blocked") return `<span class="pill bad"><strong>review</strong> blocked</span>`;
+  return `<span class="pill"><strong>review</strong> unreviewed</span>`;
+}
+function refreshReview(){
+  if(!IDX) return;
+  const filter = ($("#reviewFilter").value||"all");
+  const q = ($("#reviewSearch").value||"").trim().toLowerCase();
+  const list = IDX.controls.map(c=>{
+    const note = getNote(c.id);
+    const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
+    return {
+      id: c.id,
+      title: c.title || "",
+      reviewState: note.reviewState || "unreviewed",
+      reviewer: note.reviewer || "",
+      reviewedAt: note.reviewedAt || "",
+      status: note.status || "",
+      tags: (note.tags||[]).join(", "),
+      broken: counts.broken || 0
+    };
+  }).filter(r=>{
+    if(filter!=="all" && r.reviewState!==filter) return false;
+    if(q){
+      const hay = `${r.id} ${r.title} ${r.tags} ${r.reviewer} ${r.status}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // counts
+  const all = IDX.controls.length;
+  const stats = {unreviewed:0, reviewed:0, "needs-work":0, blocked:0};
+  for(const c of IDX.controls){
+    const st = (getNote(c.id).reviewState || "unreviewed");
+    if(stats[st]!==undefined) stats[st]++; else stats.unreviewed++;
+  }
+  $("#reviewSummary").innerHTML = `
+    ${reviewPill("unreviewed")} <span class="mono">${stats.unreviewed}</span>
+    &nbsp; ${reviewPill("reviewed")} <span class="mono">${stats.reviewed}</span>
+    &nbsp; ${reviewPill("needs-work")} <span class="mono">${stats["needs-work"]}</span>
+    &nbsp; ${reviewPill("blocked")} <span class="mono">${stats.blocked}</span>
+    <span class="muted"> / total ${all}</span>
+  `;
+  $("#reviewCount").textContent = String(list.length);
+
+  // sort: blocked, needs-work, unreviewed, reviewed; then broken desc; then id
+  const order = {"blocked":0,"needs-work":1,"unreviewed":2,"reviewed":3};
+  list.sort((a,b)=> (order[a.reviewState]??9)-(order[b.reviewState]??9) || (b.broken-a.broken) || a.id.localeCompare(b.id));
+
+  const tb = $("#reviewTable tbody");
+  tb.innerHTML = "";
+  for(const r of list){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono"><a class="link" href="#id=${encodeURIComponent(r.id)}">${esc(r.id)}</a></td>
+      <td>${esc(r.reviewState)}</td>
+      <td>${esc(r.reviewer)}</td>
+      <td>${esc(r.reviewedAt)}</td>
+      <td>${esc(r.status)}</td>
+      <td>${esc(r.tags)}</td>
+      <td>${r.broken? `<span class="pill bad"><strong>${r.broken}</strong></span>`:""}</td>
+      <td>${esc(r.title)}</td>
+    `;
+    tr.addEventListener("click",(e)=>{
+      const a = e.target?.closest("a");
+      if(a) return;
+      openControl(r.id);
+      setTab("detail");
+    });
+    tb.appendChild(tr);
+  }
+}
+function buildReviewReportMarkdown(scope="all"){
+  if(!IDX) return "# Review report\n\n(No catalog loaded)\n";
+  const stats = {unreviewed:0, reviewed:0, "needs-work":0, blocked:0};
+  const rows = [];
+  for(const c of IDX.controls){
+    const n = getNote(c.id);
+    const st = n.reviewState || "unreviewed";
+    if(stats[st]!==undefined) stats[st]++; else stats.unreviewed++;
+    const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
+    rows.push({
+      id:c.id, title:c.title||"", reviewState:st, reviewer:n.reviewer||"", reviewedAt:n.reviewedAt||"",
+      status:n.status||"", tags:(n.tags||[]).join(", "), broken:counts.broken||0
+    });
+  }
+  rows.sort((a,b)=> (b.broken-a.broken) || a.id.localeCompare(b.id));
+  const lines = [];
+  lines.push(`# Review report`);
+  lines.push(``);
+  lines.push(`Generated: ${new Date().toISOString()}`);
+  lines.push(``);
+  lines.push(`## Summary`);
+  lines.push(`- Unreviewed: ${stats.unreviewed}`);
+  lines.push(`- Reviewed: ${stats.reviewed}`);
+  lines.push(`- Needs work: ${stats["needs-work"]}`);
+  lines.push(`- Blocked: ${stats.blocked}`);
+  lines.push(`- Total controls: ${IDX.controls.length}`);
+  lines.push(``);
+  lines.push(`## Not yet reviewed / needs attention`);
+  const attention = rows.filter(r=> r.reviewState!=="reviewed" || r.broken>0);
+  if(attention.length===0){
+    lines.push(`(none)`);
+  }else{
+    for(const r of attention.slice(0,500)){
+      lines.push(`- **${r.id}** (${r.reviewState}${r.broken?`, broken:${r.broken}`:""}) — ${r.title}`);
+    }
+    if(attention.length>500) lines.push(`- …and ${attention.length-500} more`);
+  }
+  lines.push(``);
+  return lines.join("\n");
+}
+function exportReviewCSV(){
+  const rows = [];
+  for(const c of (IDX?.controls||[])){
+    const n = getNote(c.id);
+    const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
+    rows.push({
+      id: c.id,
+      title: c.title||"",
+      sec_level: c.sec_level||"",
+      effort_level: c.effort_level||"",
+      class: c.class||"",
+      incoming: counts.incoming||0,
+      outgoing: counts.outgoing||0,
+      broken: counts.broken||0,
+      reviewState: n.reviewState||"unreviewed",
+      reviewer: n.reviewer||"",
+      reviewedAt: n.reviewedAt||"",
+      status: n.status||"",
+      tags: (n.tags||[]).join(";"),
+    });
+  }
+  downloadText("review.csv", toCSV(rows), "text/csv");
+}
+
+/* ---------- CSV helpers ---------- */
+function csvEscape(v){
+  const s = String(v ?? "");
+  if(/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+  return s;
+}
+function toCSV(rows){
+  if(!rows || rows.length===0) return "";
+  const cols = Object.keys(rows[0]);
+  const out = [cols.map(csvEscape).join(",")];
+  for(const r of rows){
+    out.push(cols.map(c=>csvEscape(r[c])).join(","));
+  }
+  return out.join("\n");
+}
+function exportControlsCSV(ids, filename="controls.csv"){
+  if(!IDX) return;
+  const set = new Set(ids||[]);
+  const rows = [];
+  for(const c of IDX.controls){
+    if(ids && ids.length && !set.has(c.id)) continue;
+    const n = getNote(c.id);
+    const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
+    rows.push({
+      id: c.id,
+      title: c.title||"",
+      sec_level: c.sec_level||"",
+      effort_level: c.effort_level||"",
+      class: c.class||"",
+      incoming: counts.incoming||0,
+      outgoing: counts.outgoing||0,
+      broken: counts.broken||0,
+      reviewState: n.reviewState||"unreviewed",
+      reviewer: n.reviewer||"",
+      reviewedAt: n.reviewedAt||"",
+      status: n.status||"",
+      tags: (n.tags||[]).join(";"),
+    });
+  }
+  downloadText(filename, toCSV(rows), "text/csv");
+}
+
+/* ---------- Control → Markdown export ---------- */
+function controlToMarkdown(id){
+  if(!IDX?.byId?.has(id)) return `# ${id}\n\n(not found)\n`;
+  const c = IDX.byId.get(id);
+  const n = getNote(id);
+  const counts = IDX.counts.get(id) || {incoming:0,outgoing:0,broken:0};
+  const lines = [];
+  lines.push(`## ${c.id} — ${c.title || "(no title)"}`);
+  lines.push(``);
+  lines.push(`- sec_level: ${c.sec_level || ""}`);
+  lines.push(`- effort_level: ${c.effort_level || ""}`);
+  lines.push(`- class: ${c.class || ""}`);
+  lines.push(`- incoming: ${counts.incoming}  | outgoing: ${counts.outgoing} | broken: ${counts.broken}`);
+  lines.push(`- aliases: ${(c.altIds||[]).join(", ")}`);
+  lines.push(``);
+  lines.push(`### Statement`);
+  lines.push(c.statement ? c.statement.trim() : "(empty)");
+  lines.push(``);
+  lines.push(`### Guidance`);
+  lines.push(c.guidance ? c.guidance.trim() : "(empty)");
+  lines.push(``);
+  lines.push(`### Params`);
+  if(c.params && c.params.length){
+    for(const p of c.params){
+      lines.push(`- \`${p.id}\`${p.label?` — ${p.label}`:""}`);
+    }
+  }else{
+    lines.push(`(none)`);
+  }
+  lines.push(``);
+  lines.push(`### Outgoing links`);
+  const outs = IDX.outgoing.get(id) || [];
+  if(outs.length){
+    for(const o of outs){
+      lines.push(`- ${o.rel || ""} ${o.href || ""} → ${o.targetType}:${o.targetId || ""}`);
+    }
+  }else lines.push(`(none)`);
+  lines.push(``);
+  lines.push(`### Incoming links`);
+  const ins = IDX.incoming.get(id) || [];
+  if(ins.length){
+    for(const x of ins){
+      lines.push(`- ${x.fromId} ${x.rel || ""} ${x.href || ""}`);
+    }
+  }else lines.push(`(none)`);
+  lines.push(``);
+  lines.push(`### Review / notes (local workspace)`);
+  lines.push(`- reviewState: ${n.reviewState || "unreviewed"}`);
+  lines.push(`- reviewer: ${n.reviewer || ""}`);
+  lines.push(`- reviewedAt: ${n.reviewedAt || ""}`);
+  lines.push(`- status: ${n.status || ""}`);
+  lines.push(`- tags: ${(n.tags||[]).join(", ")}`);
+  lines.push(`- decision: ${n.decision || ""}`);
+  lines.push(`- date: ${n.date || ""}`);
+  lines.push(``);
+  lines.push(n.notes ? n.notes.trim() : "(no notes)");
+  lines.push(``);
+  lines.push(`### Evidence`);
+  if(n.evidence && n.evidence.length){
+    for(const ev of n.evidence){
+      lines.push(`- ${ev.label || ""}: ${ev.url || ""}`);
+    }
+  }else lines.push(`(none)`);
+  lines.push(``);
+  return lines.join("\n");
+}
+
+/* ---------- Explainable href resolution (broken links) ---------- */
+const _suggestCache = new Map(); // key -> string
+function suggestControlIds(q, limit=6){
+  if(!IDX) return [];
+  const t = (q||"").toLowerCase();
+  const ids = IDX.controls.map(c=>c.id);
+  // prefix first
+  const pref = ids.filter(id=>id.toLowerCase().startsWith(t)).slice(0,limit);
+  if(pref.length) return pref;
+  const inc = ids.filter(id=>id.toLowerCase().includes(t)).slice(0,limit);
+  if(inc.length) return inc;
+  // fallback: simple edit distance on a subset
+  function dist(a,b){
+    // tiny Levenshtein (bounded)
+    a=a.toLowerCase(); b=b.toLowerCase();
+    const max = 24;
+    if(a.length>max) a=a.slice(0,max);
+    if(b.length>max) b=b.slice(0,max);
+    const dp = Array(b.length+1).fill(0).map((_,j)=>j);
+    for(let i=1;i<=a.length;i++){
+      let prev=dp[0]; dp[0]=i;
+      for(let j=1;j<=b.length;j++){
+        const tmp=dp[j];
+        const cost = a[i-1]===b[j-1]?0:1;
+        dp[j]=Math.min(dp[j]+1, dp[j-1]+1, prev+cost);
+        prev=tmp;
+      }
+    }
+    return dp[b.length];
+  }
+  const scored = ids.slice(0,1200).map(id=>({id, d:dist(t,id)})).sort((x,y)=>x.d-y.d).slice(0,limit);
+  return scored.map(x=>x.id);
+}
+function suggestResourceIds(q, limit=4){
+  if(!IDX?.resources) return [];
+  const t = (q||"").toLowerCase();
+  const ids = Array.from(IDX.resources.keys());
+  const pref = ids.filter(id=>id.toLowerCase().startsWith(t)).slice(0,limit);
+  if(pref.length) return pref;
+  const inc = ids.filter(id=>id.toLowerCase().includes(t)).slice(0,limit);
+  return inc;
+}
+function explainHref(href){
+  if(!IDX) return "";
+  const raw = String(href||"");
+  const key = raw;
+  if(_suggestCache.has(key)) return _suggestCache.get(key);
+  const h = raw.replace(/^#/, "");
+  if(!h){ _suggestCache.set(key,"Empty href"); return "Empty href"; }
+  if(IDX.byId?.has(h)){
+    const s = `Resolves to control id: ${h}`;
+    _suggestCache.set(key,s); return s;
+  }
+  if(IDX.byAlias?.has(h)){
+    const mapped = IDX.byAlias.get(h);
+    if(mapped && String(mapped).startsWith("resource:")){
+      const uuid = String(mapped).slice(9);
+      const s = `Resolves via alias → resource:${uuid}`;
+      _suggestCache.set(key,s); return s;
+    }
+    if(mapped && IDX.byId?.has(mapped)){
+      const s = `Resolves via alias → control:${mapped}`;
+      _suggestCache.set(key,s); return s;
+    }
+  }
+  if(IDX.resources?.has(h)){
+    const s = `Resolves to resource uuid: ${h}`;
+    _suggestCache.set(key,s); return s;
+  }
+  const sug = suggestControlIds(h, 6);
+  const res = suggestResourceIds(h, 4);
+  let s = `Unresolved: ${h}.`;
+  if(sug.length) s += ` Similar control IDs: ${sug.join(", ")}.`;
+  if(res.length) s += ` Similar resource UUIDs: ${res.join(", ")}.`;
+  _suggestCache.set(key,s);
+  return s;
+}
+
+/* ---------- OVERRIDES ---------- */
+
+// 1) setTab: add refresh for new panels + cache
+function setTab(name){
+  $$(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  $$(".panel").forEach(p=>p.hidden = (p.id !== `panel-${name}`));
+  WS.ui.activeTab = name;
+  saveWS();
+  if(name==="dashboard") refreshDashboard();
+  if(name==="selected") refreshSelectedPanel();
+  if(name==="mapping") refreshMapping();
+  if(name==="lint") refreshLint();
+  if(name==="diff") refreshDiffTable();
+  if(name==="resources") refreshResources();
+  if(name==="review") refreshReview();
+  if(name==="workspace"){ updateWSPreview(); refreshCachePanel(); }
+}
+
+// 2) parseHash: add resource deep-link
+function parseHash(){
+  const h = (location.hash||"").replace(/^#/, "");
+  if(!h) return;
+
+  const params = new URLSearchParams(h);
+  const id = params.get("id");
+  const alias = params.get("alias");
+  const group = params.get("group");
+  const param = params.get("param");
+  const rel = params.get("rel");
+  const resource = params.get("resource");
+
+  if(resource && IDX?.resources?.has(resource)){
+    ACTIVE_RESOURCE = resource;
+    WS.lastHash = `#resource=${encodeURIComponent(resource)}`;
+    saveWS();
+    setTab("resources");
+    renderResourceDetail(resource);
+    return;
+  }
+
+  if(alias && IDX?.byAlias){
+    const mapped = IDX.byAlias.get(alias) || IDX.byAlias.get(alias.replace(/^#/, ""));
+    if(mapped && String(mapped).startsWith("resource:")){
+      const uuid = String(mapped).slice(9);
+      if(IDX.resources?.has(uuid)){
+        ACTIVE_RESOURCE = uuid;
+        WS.lastHash = `#resource=${encodeURIComponent(uuid)}`;
+        saveWS();
+        setTab("resources");
+        renderResourceDetail(uuid);
+        return;
+      }
+    }
+    if(mapped && IDX.byId.has(mapped)){
+      ACTIVE_ID = mapped;
+      WS.lastHash = `#id=${encodeURIComponent(mapped)}`;
+      saveWS();
+      renderTree();
+      renderDetail();
+      return;
+    }
+  }
+
+  if(id && IDX?.byId?.has(id)){
+    ACTIVE_ID = id;
+    if(param) ACTIVE_PARAM = param;
+    if(rel) ACTIVE_REL = {rel, fromId:id};
+    WS.lastHash = location.hash;
+    saveWS();
+    renderTree();
+    renderDetail();
+
+    if(param){
+      setTimeout(()=>{
+        const acc = $$("details.acc", $("#detail")).find(d=>d.querySelector("summary")?.textContent?.includes("Params"));
+        if(acc){ acc.open = true; }
+        const row = $$("table.table tbody tr", $("#detail")).find(tr=>tr.innerText?.includes(param));
+        if(row) row.scrollIntoView({behavior:"smooth", block:"center"});
+      }, 50);
+    }
+    if(rel){
+      setTimeout(()=>{
+        const acc = $$("details.acc", $("#detail")).find(d=>d.querySelector("summary")?.textContent?.includes("Relationships"));
+        if(acc){ acc.open = true; }
+        $$("a.relLink", $("#detail")).forEach(a=>{
+          if((a.dataset.rel||"")===rel){
+            a.style.textDecoration = "underline";
+            a.style.textDecorationThickness = "2px";
+          }
+        });
+      }, 50);
+    }
+    return;
+  }
+
+  if(group){
+    $("#groupMode").value = "oscal";
+    expandGroupById(group);
+    applyFilters();
+    toast(`Group ${esc(group)}`);
+    return;
+  }
+}
+
+// 3) renderOutgoingTable: resource deep-links + broken explanations
+function renderOutgoingTable(outgoingList){
+  if(!outgoingList || outgoingList.length===0) return `<span class="muted">(keine)</span>`;
+  const rows = outgoingList.map(o=>{
+    const broken = o.targetType==="broken";
+    const exp = broken ? explainHref(o.href) : "";
+    const target = o.targetType==="control" ? `<a class="link" href="#id=${encodeURIComponent(o.targetId)}">${esc(o.targetId)}</a>`
+                 : (o.targetType==="resource" ? `<a class="link mono" href="#resource=${encodeURIComponent(o.targetId)}">resource:${esc(o.targetId)}</a>`
+                 : `<span class="mono">${esc(o.targetId||"")}</span>`);
+    const badge = broken ? `<span class="badge r" title="${esc(exp)}">broken</span>` : (o.targetType==="control"? `<span class="badge k">control</span>`:`<span class="badge">resource</span>`);
+    const rel = o.rel ? `<a href="#" class="link relLink" data-rel="${esc(o.rel)}">${esc(o.rel)}</a>` : `<span class="muted">(rel)</span>`;
+    const href = o.href ? `<span class="mono" title="${broken?esc(exp):""}">${esc(o.href)}</span>` : "";
+    return `<tr>
+      <td>${rel}</td>
+      <td>${href}</td>
+      <td>${target}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join("");
+  return `<table class="table">
+    <thead><tr><th>rel</th><th>href</th><th>target</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// 4) saveNotesFor: include review fields
+function saveNotesFor(id){
+  const status = $("#noteStatus").value;
+  const tags = ($("#noteTags").value||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const decision = $("#noteDecision").value||"";
+  const date = ($("#noteDate").value||"").trim() || nowISO();
+  const notes = $("#noteText").value||"";
+  const evidence = readEvidenceTable();
+
+  const reviewState = $("#reviewState") ? ($("#reviewState").value||"unreviewed") : (getNote(id).reviewState||"unreviewed");
+  const reviewer = $("#reviewer") ? ($("#reviewer").value||"") : (getNote(id).reviewer||"");
+  const reviewedAt = $("#reviewedAt") ? ($("#reviewedAt").value||"") : (getNote(id).reviewedAt||"");
+
+  WS.notes[id] = {status, tags, decision, date, notes, evidence, reviewState, reviewer, reviewedAt};
+  saveWS();
+  toast("Saved");
+  renderTree();
+  // keep review tab fresh
+  if(currentTab()==="review") refreshReview();
+}
+
+// 5) loadFromUrl: cache policy support
+async function loadFromUrl(){
+  const url = $("#url").value.trim();
+  if(!url){ toast("No URL"); return; }
+  WS.lastUrl = url;
+  saveWS();
+  setStatus("loading…");
+
+  const policy = (WS.ui.cachePolicy || "network");
+  const rawKey = toRaw(url);
+
+  let loadedFromCache = false;
+  if(policy==="prefer"){
+    const cached = await cacheGet(rawKey);
+    if(cached?.json){
+      loadedFromCache = true;
+      toast(`Loaded cached copy (${(cached.savedAt||"").slice(0,10)})`, 2200);
+      await loadCatalog(cached.json, url);
+    }
+  }
+
+  try{
+    const {json, meta, raw} = await fetchJSONWithMeta(url);
+    await loadCatalog(json, url);
+    await cachePut(rawKey, json, meta, {controls: (IDX?.controls?.length||0), size: approxSize(json)});
+    if(loadedFromCache){
+      toast("Updated from network", 2000);
+    }else{
+      toast("Catalog loaded", 1800);
+    }
+  }catch(err){
+    if(!loadedFromCache){
+      const cached = await cacheGet(rawKey);
+      if(cached?.json){
+        toast("Network failed — loaded from cache", 2600);
+        await loadCatalog(cached.json, url);
+      }else{
+        toast(`Load error: ${esc(err.message)}`, 3200);
+      }
+    }else{
+      toast(`Network failed — kept cached version`, 2600);
+    }
+  }finally{
+    setStatus("ready");
+    // refresh cache panel if open
+    if(currentTab()==="workspace") refreshCachePanel();
+  }
+}
+
+// 6) loadCatalog: initialize worker + resources refs + thresholds
+async function loadCatalog(json, sourceUrl){
+  CATALOG_A = json;
+  IDX = buildIndex(json);
+
+  // v5: resource reference index
+  buildResourceRefs();
+
+  setMetadata(IDX, sourceUrl);
+  populateFilters(IDX);
+
+  // Apply WS restore after populating selects
+  restoreUIFromWS();
+
+  // init dup threshold input
+  if($("#dupThr")){
+    const thr = Number(WS.ui.nearDupThreshold);
+    $("#dupThr").value = (isFinite(thr) ? thr : 0.82).toFixed(2);
+  }
+
+  // v5: init worker (async, non-blocking)
+  tfInit(IDX.controls).then(()=>{
+    // ok
+  }).catch(()=>{});
+
+  FILTERED = IDX.controls.slice();
+  applyFilters();
+
+  parseHash();
+
+  $("#selectedCount").textContent = String(getSelection().length);
+  $("#brokenCount").textContent = String(IDX.broken.length);
+
+  fillTraceSelects();
+
+  refreshLint();
+
+  // refresh resources/review panels if active
+  if(currentTab()==="resources") refreshResources();
+  if(currentTab()==="review") refreshReview();
+}
+
+// 7) computeNearDuplicates: use worker + threshold
+async function computeNearDuplicatesV5(){
+  if(!IDX) return;
+  const scope = $("#dashScope").value;
+  const list = scopeList(scope);
+  if(list.length<2){ toast("Need at least 2 controls"); return; }
+  const thr = clamp(Number($("#dupThr")?.value || WS.ui.nearDupThreshold || 0.82), 0, 1);
+  WS.ui.nearDupThreshold = thr;
+  saveWS();
+  const out = $("#dupOut");
+  out.textContent = "Computing… (worker)";
+  try{
+    if(!TF.ready){
+      out.textContent = "TF worker not ready — falling back to main thread implementation…";
+      // fallback: call original v4 computeNearDuplicates if present
+      if(typeof window.computeNearDuplicates === "function"){
+        // call v4 (will update dupOut itself)
+        window.computeNearDuplicates();
+      }
+      return;
+    }
+    const ids = list.map(c=>c.id);
+    const pairs = await tfNearDuplicates(ids, thr);
+    if(!pairs.length){
+      out.innerHTML = `<span class="muted">No pairs above threshold ${thr.toFixed(2)}.</span>`;
+      toast("No near-duplicates", 1600);
+      return;
+    }
+    const top = pairs.slice(0, 200);
+    out.innerHTML = `
+      <div class="small">Threshold: <span class="mono">${thr.toFixed(2)}</span> • Pairs: <span class="mono">${pairs.length}</span> (showing ${top.length})</div>
+      <div style="height:8px"></div>
+      ${top.map(p=>`
+        <div>
+          <a class="link mono" href="#id=${encodeURIComponent(p.a)}">${esc(p.a)}</a>
+          ↔
+          <a class="link mono" href="#id=${encodeURIComponent(p.b)}">${esc(p.b)}</a>
+          <span class="pill"><strong>all</strong> ${p.sAll.toFixed(2)}</span>
+          <span class="pill"><strong>st</strong> ${p.sSt.toFixed(2)}</span>
+          <span class="pill"><strong>gu</strong> ${p.sGu.toFixed(2)}</span>
+        </div>
+      `).join("")}
+    `;
+    toast("Near-duplicates done", 1800);
+  }catch(err){
+    out.innerHTML = `<span class="muted">Error: ${esc(err.message)}</span>`;
+    toast(`Near-duplicates error: ${esc(err.message)}`, 3200);
+  }
+}
+
+// 8) renderDetail: add review fields + MD export + similar controls
+function renderDetail(){
+  const host = $("#detail");
+  if(!host) return;
+  if(!ACTIVE_ID){
+    host.className = "empty";
+    host.innerHTML = `<div style="font-size:14px; margin-bottom:6px;">Noch nichts ausgewählt.</div><div class="small">Klicke links eine Control an.</div>`;
+    return;
+  }
+  const c = IDX.byId.get(ACTIVE_ID);
+  const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
+
+  host.className = "detailCard";
+
+  const note = getNote(c.id);
+  const status = note.status || "";
+  const tags = (note.tags||[]).join(", ");
+  const decision = note.decision || "";
+  const date = note.date || "";
+  const reviewState = note.reviewState || "unreviewed";
+  const reviewer = note.reviewer || (WS.ui.reviewerName || "");
+  const reviewedAt = note.reviewedAt || "";
+
+  const statementHTML = linkifyParams(highlightProse(c.statement||""));
+  const guidanceHTML  = linkifyParams(highlightProse(c.guidance||""));
+
+  const incomingList = (IDX.incoming.get(c.id)||[]);
+  const outgoingList = (IDX.outgoing.get(c.id)||[]);
+
+  host.innerHTML = `
+    <div class="detailHeader">
+      <div>
+        <h2><span class="mono">${esc(c.id)}</span> — ${esc(c.title||"(no title)")}</h2>
+        <div class="split" style="margin-top:8px; flex-wrap:wrap;">
+          ${c.sec_level? `<span class="pill"><strong>sec</strong> ${esc(c.sec_level)}</span>`:""}
+          ${c.effort_level? `<span class="pill"><strong>eff</strong> ${esc(c.effort_level)}</span>`:""}
+          ${c.class? `<span class="pill"><strong>class</strong> ${esc(c.class)}</span>`:""}
+          <span class="pill"><strong>incoming</strong> ${counts.incoming}</span>
+          <span class="pill"><strong>outgoing</strong> ${counts.outgoing}</span>
+          <span class="pill ${counts.broken? "bad":"ok"}"><strong>broken</strong> ${counts.broken}</span>
+          ${c.altIds?.length? `<span class="pill"><strong>alias</strong> ${esc(c.altIds[0])}${c.altIds.length>1?` +${c.altIds.length-1}`:""}</span>`:""}
+          ${reviewPill(reviewState)}
+        </div>
+      </div>
+
+      <div class="split" style="flex-wrap:wrap;">
+        <button class="btn" id="copyIdBtn">Copy ID</button>
+        <button class="btn" id="copyLinkBtn">Copy deep-link</button>
+        <button class="btn" id="exportMdBtn">Export MD</button>
+        <button class="btn" id="copyMdBtn">Copy MD</button>
+        <button class="btn tgl" id="selThisBtn" aria-pressed="${isSelected(c.id)?"true":"false"}">${isSelected(c.id)?"Selected":"Select"}</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Statement</h3>
+      <div class="prose" id="proseStatement">${statementHTML || `<span class="muted">(leer)</span>`}</div>
+    </div>
+
+    <div class="section">
+      <h3>Guidance</h3>
+      <div class="prose" id="proseGuidance">${guidanceHTML || `<span class="muted">(leer)</span>`}</div>
+    </div>
+
+    <details class="acc" open>
+      <summary>Relationships / Links</summary>
+      <div class="accBody">
+        <div class="kv">
+          <div class="k">Outgoing</div>
+          <div class="v">${renderOutgoingTable(outgoingList)}</div>
+          <div class="k">Incoming</div>
+          <div class="v">${renderIncomingTable(incomingList)}</div>
+        </div>
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Params</summary>
+      <div class="accBody">
+        ${renderParams(c.params)}
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Similarity (TF‑IDF worker)</summary>
+      <div class="accBody">
+        <div class="split" style="justify-content:space-between; align-items:flex-end; flex-wrap:wrap;">
+          <div class="small">Find top similar controls by cosine similarity. (Uses worker; may take a second.)</div>
+          <div class="split">
+            <select id="simMode" class="select" style="width:auto;">
+              <option value="all">all (title+statement+guidance)</option>
+              <option value="statement">statement</option>
+              <option value="guidance">guidance</option>
+            </select>
+            <button id="simRunBtn" class="btn small">Compute</button>
+          </div>
+        </div>
+        <div style="height:10px"></div>
+        <div id="simOut" class="small muted">${TF.ready? "—" : "TF worker not ready yet."}</div>
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Visualization (Local graph)</summary>
+      <div class="accBody">
+        ${renderLocalGraph(c.id)}
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Notes / Review / Evidence (Workspace)</summary>
+      <div class="accBody">
+        <div class="grid3">
+          <div>
+            <div class="label">Review state</div>
+            <select id="reviewState" class="select">
+              <option value="unreviewed">unreviewed</option>
+              <option value="reviewed">reviewed</option>
+              <option value="needs-work">needs-work</option>
+              <option value="blocked">blocked</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">Reviewer</div>
+            <div class="field"><input id="reviewer" type="text" placeholder="name" /></div>
+          </div>
+          <div>
+            <div class="label">Reviewed at</div>
+            <div class="field"><input id="reviewedAt" type="text" placeholder="YYYY-MM-DD" /></div>
+            <div style="height:6px"></div>
+            <button id="markReviewedBtn" class="btn small">Mark reviewed now</button>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="grid3">
+          <div>
+            <div class="label">Status</div>
+            <select id="noteStatus" class="select">
+              <option value="">(none)</option>
+              <option value="todo">todo</option>
+              <option value="accepted">accepted</option>
+              <option value="not-applicable">not-applicable</option>
+              <option value="needs-clarification">needs-clarification</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">Tags (comma separated)</div>
+            <div class="field"><input id="noteTags" type="text" placeholder="e.g. policy, ticket-123, risk" /></div>
+          </div>
+          <div>
+            <div class="label">Decision date</div>
+            <div class="field"><input id="noteDate" type="text" placeholder="YYYY-MM-DD" /></div>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+        <div class="label">Decision / Rationale</div>
+        <div class="field"><input id="noteDecision" type="text" placeholder="Kurzentscheidung / Begründung" /></div>
+
+        <div style="height:10px"></div>
+        <div class="label">Notes</div>
+        <textarea id="noteText" placeholder="Notizen…"></textarea>
+
+        <div style="height:12px"></div>
+        <div class="split" style="justify-content:space-between;">
+          <div style="font-weight:700;">Evidence / Links</div>
+          <button id="addEvidenceBtn" class="btn small">+ Add</button>
+        </div>
+
+        <div style="height:8px"></div>
+        <table class="table" id="evidenceTable">
+          <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <div style="height:10px"></div>
+        <div class="split">
+          <button id="noteSaveBtn" class="btn primary">Save</button>
+          <button id="noteClearBtn" class="btn danger">Clear notes for this control</button>
+          <span class="small muted">Local workspace only.</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="acc">
+      <summary>Raw JSON (Control)</summary>
+      <div class="accBody">
+        <pre class="code">${esc(JSON.stringify(c.raw, null, 2))}</pre>
+      </div>
+    </details>
+  `;
+
+  $("#copyIdBtn").onclick = ()=>{ navigator.clipboard?.writeText(c.id); toast(`Copied ${esc(c.id)}`); };
+  $("#copyLinkBtn").onclick = ()=>{ 
+    const link = `${location.origin}${location.pathname}#id=${encodeURIComponent(c.id)}`;
+    copyText(link);
+  };
+  $("#exportMdBtn").onclick = ()=> downloadText(`${c.id}.md`, controlToMarkdown(c.id), "text/markdown");
+  $("#copyMdBtn").onclick = ()=> copyText(controlToMarkdown(c.id));
+
+  $("#selThisBtn").onclick = ()=>{
+    const cur = isSelected(c.id);
+    toggleSelected(c.id, !cur);
+    $("#selThisBtn").setAttribute("aria-pressed", (!cur)?"true":"false");
+    $("#selThisBtn").textContent = (!cur)?"Selected":"Select";
+  };
+
+  // review fields initial
+  $("#reviewState").value = reviewState;
+  $("#reviewer").value = reviewer;
+  $("#reviewedAt").value = reviewedAt;
+
+  $("#markReviewedBtn").onclick = ()=>{
+    $("#reviewState").value = "reviewed";
+    $("#reviewedAt").value = nowISO();
+    if(!$("#reviewer").value) $("#reviewer").value = WS.ui.reviewerName || "";
+    toast("Marked reviewed (remember to Save)");
+  };
+
+  // notes fields initial
+  $("#noteStatus").value = status;
+  $("#noteTags").value = tags;
+  $("#noteDecision").value = decision;
+  $("#noteDate").value = date;
+  $("#noteText").value = note.notes || "";
+  renderEvidenceTable(c.id);
+
+  $("#noteSaveBtn").onclick = ()=>saveNotesFor(c.id);
+  $("#noteClearBtn").onclick = ()=>{ delete WS.notes[c.id]; saveWS(); toast("Notes cleared"); renderDetail(); if(currentTab()==="review") refreshReview(); };
+  $("#addEvidenceBtn").onclick = ()=>{ addEvidenceRow(c.id); };
+
+  // param clicks
+  $$(".param", host).forEach(sp=>{
+    sp.addEventListener("click", ()=>{
+      const pid = sp.dataset.pid;
+      if(pid){
+        ACTIVE_PARAM = pid;
+        WS.lastHash = `#param=${encodeURIComponent(pid)}&id=${encodeURIComponent(c.id)}`;
+        saveWS();
+        updateHash();
+        toast(`Param ${esc(pid)}`);
+      }
+    });
+  });
+
+  // outgoing rel group deep-link clicks
+  $$(".relLink", host).forEach(a=>{
+    a.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const rel = a.dataset.rel;
+      if(rel){
+        ACTIVE_REL = {rel, fromId:c.id};
+        WS.lastHash = `#rel=${encodeURIComponent(rel)}&id=${encodeURIComponent(c.id)}`;
+        saveWS();
+        updateHash();
+        toast(`rel:${esc(rel)}`);
+      }
+    });
+  });
+
+  // similar compute
+  $("#simRunBtn").onclick = async ()=>{
+    const mode = $("#simMode").value || "all";
+    const out = $("#simOut");
+    out.textContent = "Computing…";
+    try{
+      if(!TF.ready){ out.innerHTML = `<span class="muted">TF worker not ready.</span>`; return; }
+      const results = await tfSimilar(c.id, mode, 12, 0.12);
+      if(!results.length){
+        out.innerHTML = `<span class="muted">No similar controls found (minScore 0.12).</span>`;
+        return;
+      }
+      out.innerHTML = results.map(r=>{
+        return `<div><a class="link mono" href="#id=${encodeURIComponent(r.id)}">${esc(r.id)}</a> <span class="pill"><strong>sim</strong> ${r.score.toFixed(2)}</span> <span class="muted">${esc(IDX.byId.get(r.id)?.title||"")}</span></div>`;
+      }).join("");
+    }catch(err){
+      out.innerHTML = `<span class="muted">Error: ${esc(err.message)}</span>`;
+    }
+  };
+
+  // initialize highlight nav
+  buildHighlights();
+  updateHighlightButtons();
+}
+
+/* ---------- v5 event wiring (after base bindUI) ---------- */
+function bindV5Extras(){
+  // dup threshold restore
+  if($("#dupThr")){
+    const thr = Number(WS.ui.nearDupThreshold);
+    $("#dupThr").value = (isFinite(thr)?thr:0.82).toFixed(2);
+    $("#dupThr").addEventListener("change", ()=>{
+      WS.ui.nearDupThreshold = clamp(Number($("#dupThr").value||0.82), 0, 1);
+      saveWS();
+    });
+  }
+  // override dup button to worker-based implementation
+  if($("#dupBtn")){
+    $("#dupBtn").onclick = ()=>{ computeNearDuplicatesV5(); };
+  }
+
+  // resources panel
+  if($("#resSearch")){
+    $("#resSearch").addEventListener("input", ()=> refreshResources());
+    $("#resShow").addEventListener("change", ()=> refreshResources());
+    $("#resExportCsvBtn").onclick = ()=>{
+      if(!IDX) return;
+      const rows = [];
+      for(const [uuid, r] of IDX.resources.entries()){
+        const refs = IDX.resourceRefs?.get(uuid)?.length || 0;
+        const title = r?.title || r?.name || "";
+        const rlinks = Array.isArray(r?.rlinks) ? r.rlinks : [];
+        rows.push({uuid, title, links: rlinks.map(x=>x?.href||"").join(" "), refs});
+      }
+      downloadText("resources.csv", toCSV(rows), "text/csv");
+    };
+  }
+
+  // review panel
+  if($("#reviewFilter")){
+    $("#reviewFilter").addEventListener("change", refreshReview);
+    $("#reviewSearch").addEventListener("input", refreshReview);
+    $("#reviewExportCsvBtn").onclick = ()=> exportReviewCSV();
+    $("#reviewExportMdBtn").onclick = ()=> downloadText("review-report.md", buildReviewReportMarkdown(), "text/markdown");
+  }
+
+  // selected panel bulk actions + csv
+  if($("#exportSelCsvBtn")){
+    $("#exportSelCsvBtn").onclick = ()=>{
+      const ids = getSelection();
+      exportControlsCSV(ids, "selected.csv");
+    };
+  }
+  if($("#bulkApplyReviewBtn")){
+    $("#bulkApplyReviewBtn").onclick = ()=>{
+      const st = ($("#bulkReviewState").value||"").trim();
+      if(!st){ toast("Pick a review state"); return; }
+      const ids = getSelection();
+      if(!ids.length){ toast("Selection empty"); return; }
+      for(const id of ids){
+        const n = getNote(id);
+        n.reviewState = st;
+        if(st==="reviewed" && !n.reviewedAt) n.reviewedAt = nowISO();
+        if(!n.reviewer) n.reviewer = WS.ui.reviewerName || "";
+        WS.notes[id] = n;
+      }
+      saveWS();
+      toast(`Applied ${st} to ${ids.length}`);
+      if(currentTab()==="review") refreshReview();
+      renderDetail();
+    };
+  }
+  if($("#bulkApplyTagBtn")){
+    $("#bulkApplyTagBtn").onclick = ()=>{
+      const tag = ($("#bulkAddTag").value||"").trim();
+      if(!tag){ toast("Enter a tag"); return; }
+      const ids = getSelection();
+      if(!ids.length){ toast("Selection empty"); return; }
+      for(const id of ids){
+        const n = getNote(id);
+        const set = new Set(n.tags||[]);
+        set.add(tag);
+        n.tags = Array.from(set);
+        WS.notes[id] = n;
+      }
+      saveWS();
+      toast(`Added tag to ${ids.length}`);
+      if(currentTab()==="review") refreshReview();
+      renderDetail();
+    };
+  }
+
+  // workspace: cache controls + reviewer default
+  if($("#cachePolicy")){
+    $("#cachePolicy").addEventListener("change", ()=>{
+      WS.ui.cachePolicy = $("#cachePolicy").value || "network";
+      saveWS();
+      toast("Cache policy saved");
+    });
+  }
+  if($("#reviewerName")){
+    $("#reviewerName").addEventListener("input", ()=>{
+      WS.ui.reviewerName = $("#reviewerName").value || "";
+      saveWS();
+    });
+  }
+  if($("#cacheRefreshBtn")){
+    $("#cacheRefreshBtn").onclick = ()=> refreshCachePanel();
+  }
+  if($("#cacheClearBtn")){
+    $("#cacheClearBtn").onclick = async ()=>{
+      await cacheClear();
+      toast("Cache cleared");
+      refreshCachePanel();
+    };
+  }
+}
+
+/* ---------- End v5 additions ---------- */
+
+/* ---------- Init ---------- */
+function init(){
+  bindUI();
+  bindV5Extras();
+
+  // restore URL & UI from workspace
+  if(WS.lastUrl){
+    $("#url").value = WS.lastUrl;
+  }
+  restoreUIFromWS();
+  updateWSPreview();
+
+  // auto-load if lastUrl exists; otherwise keep default
+  // Try load without blocking UI, but here we'll load only if explicitly clicked OR if URL present (default).
+  // We'll auto-load to make it convenient.
+  loadFromUrl();
+
+  setStatus("ready");
+}
+
+init();
+</script>
+</body>
+</html>
