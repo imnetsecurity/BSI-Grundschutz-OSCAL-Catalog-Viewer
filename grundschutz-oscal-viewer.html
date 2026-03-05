@@ -483,6 +483,22 @@
     .toast.show{display:block}
     .toast .muted{color:var(--muted)}
 
+    .loadingIndicator{
+      position:fixed; inset:0; z-index:1500;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+      background: rgba(11,13,16,.75); backdrop-filter: blur(6px);
+      color:var(--text); font-size:14px;
+    }
+    .loadingIndicator[hidden]{display:none !important}
+    .loadingSpinner{
+      width:36px; height:36px;
+      border:3px solid rgba(36,48,65,.8);
+      border-top-color: var(--accent);
+      border-radius:50%;
+      animation: loadingSpin .7s linear infinite;
+    }
+    @keyframes loadingSpin{ to{ transform: rotate(360deg); } }
+
     /* Evidence & notes */
     textarea{
       width:100%;
@@ -556,6 +572,52 @@
       .grid2{grid-template-columns: 1fr}
       .cardGrid{grid-template-columns: 1fr}
     }
+
+    /* Accessibility: reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      *, *::before, *::after{ animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      html{ scroll-behavior: auto !important; }
+      .loadingSpinner{ animation: none; border-top-color: var(--accent); opacity: .9; }
+    }
+
+    /* Einführungs-Panel (Dokumentation) */
+    .introWrap{ max-width:900px; margin:0 auto; padding:8px 16px 40px; line-height:1.55; }
+    .introWrap h1{ font-size:24px; margin:0 0 6px; letter-spacing:.02em; }
+    .introWrap .introSub{ font-size:14px; color:var(--muted); margin-bottom:24px; }
+    .introWrap h2{ font-size:18px; margin:28px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); color:var(--text); scroll-margin-top: 12px; }
+    .introWrap h3{ font-size:15px; margin:16px 0 6px; color:var(--accent); }
+    .introWrap p{ margin:0 0 12px; font-size:14px; }
+    .introWrap ul, .introWrap ol{ margin:0 0 12px; padding-left:1.4em; }
+    .introWrap li{ margin:4px 0; }
+    .introWrap code{ font-family:var(--mono); font-size:12px; background:rgba(0,0,0,.25); padding:2px 6px; border-radius:6px; color:var(--warn); }
+    .introWrap .introCard{ border:1px solid var(--line); border-radius:14px; background:rgba(0,0,0,.12); padding:14px 16px; margin:12px 0; }
+    .introWrap .introCard h3{ margin-top:0; }
+    .introWrap .introToc{ background:rgba(0,0,0,.15); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:16px 0; }
+    .introWrap .introToc ul{ list-style:none; padding:0; margin:0; }
+    .introWrap .introToc li{ margin:6px 0; }
+    .introWrap .introToc a{ color:var(--accent); text-decoration:none; }
+    .introWrap .introToc a:hover{ text-decoration:underline; }
+    .introWrap table.doc{ width:100%; border-collapse:collapse; font-size:13px; margin:12px 0; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+    .introWrap table.doc th, .introWrap table.doc td{ padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    .introWrap table.doc th{ background:rgba(255,255,255,.04); color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+    .introWrap table.doc tr:last-child td{ border-bottom:0; }
+    .introWrap .introTip{ border-left:4px solid var(--accent); padding:10px 12px; background:rgba(106,169,255,.06); border-radius:0 10px 10px 0; margin:12px 0; font-size:13px; }
+    .introWrap .introFooter{ margin-top:28px; color:var(--muted); font-size:12px; }
+    .introWrap .introQuickStart{ background: rgba(106,169,255,.08); border:1px solid rgba(106,169,255,.35); border-radius:14px; padding:16px 18px; margin:16px 0; }
+    .introWrap .introQuickStart h2{ margin-top:0; border-bottom:0; padding-bottom:0; font-size:16px; }
+    .introWrap .introSteps{ list-style:none; padding:0; margin:12px 0 0; }
+    .introWrap .introSteps li{ margin:10px 0; padding-left:28px; position:relative; }
+    .introWrap .introSteps li::before{ content: attr(data-step); position:absolute; left:0; width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--bg); font-size:12px; font-weight:700; display:grid; place-items:center; }
+    .introWrap .introWorkflows{ display:grid; gap:12px; margin:12px 0; }
+    .introWrap .introWorkflow{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:rgba(0,0,0,.1); }
+    .introWrap .introWorkflow strong{ display:block; margin-bottom:6px; color:var(--accent); }
+    .introWrap .introApplyBtn{ margin-left:8px; padding:4px 10px; font-size:11px; vertical-align:middle; cursor:pointer; }
+    .introWrap .introGlossary{ font-size:13px; }
+    .introWrap .introGlossary dt{ font-weight:700; color:var(--text); margin-top:10px; }
+    .introWrap .introGlossary dd{ margin:2px 0 0 1em; color:var(--muted); }
+    .introWrap .introFaq{ margin-top:12px; }
+    .introWrap .introFaq dt{ font-weight:700; margin-top:12px; color:var(--text); }
+    .introWrap .introFaq dd{ margin:4px 0 0; color:var(--muted); font-size:13px; }
   </style>
 </head>
 <body>
@@ -591,11 +653,18 @@
 
     <span class="spacer"></span>
 
+    <a href="einfuehrung-und-erklaerung.html" class="btn" target="_blank" rel="noopener">Einführung</a>
+    <button id="introBtn" class="btn">Einführung</button>
     <button id="helpBtn" class="btn">Query Help</button>
     <button id="dashBtn" class="btn">Dashboard</button>
     <button id="wsBtn" class="btn">Workspace</button>
   </div>
 </header>
+
+<div id="loadingIndicator" class="loadingIndicator" aria-live="polite" hidden>
+  <span class="loadingSpinner"></span>
+  <span class="loadingText">Laden…</span>
+</div>
 
 <div class="row">
   <aside>
@@ -704,6 +773,7 @@
   <main>
     <div class="pane">
       <div class="tabbar" id="tabbar">
+        <button class="tab" data-tab="einfuehrung">Einführung</button>
         <button class="tab active" data-tab="detail">Detail</button>
         <button class="tab" data-tab="dashboard">Dashboard</button>
         <button class="tab" data-tab="selected">Selected</button>
@@ -717,6 +787,285 @@
         <button id="prevHlBtn" class="btn small" title="Prev highlight (p)" disabled>◀</button>
         <button id="nextHlBtn" class="btn small" title="Next highlight (n)" disabled>▶</button>
         <span class="pill"><strong>HL</strong> <span id="hlCount">0</span></span>
+      </div>
+
+      <div id="panel-einfuehrung" class="panel" hidden>
+        <div class="introWrap" id="einfuehrungContent">
+          <h1>Grundschutz++ OSCAL Viewer</h1>
+          <p class="introSub">Einführung, Erklärung aller Komponenten und Nutzung — alles in einer Seite.</p>
+
+          <div class="introQuickStart">
+            <h2 id="intro-schnell">Erste Schritte (in 30 Sekunden)</h2>
+            <ol class="introSteps">
+              <li data-step="1"><strong>Katalog laden:</strong> Oben URL eingeben (oder bestehende lassen) und <strong>Laden</strong> klicken – oder <strong>JSON hochladen</strong>. <button type="button" class="btn small introApplyBtn" data-intro-action="focus-url">Zum URL-Feld</button></li>
+              <li data-step="2"><strong>Control wählen:</strong> Links im Baum eine Zeile anklicken – rechts erscheint die Detailansicht. Mit <strong>↑</strong> / <strong>↓</strong> vorherige/nächste Control anspringen. <button type="button" class="btn small introApplyBtn" data-intro-action="go-detail">Zum Detail-Tab</button></li>
+              <li data-step="3"><strong>Suchen:</strong> Im Query-Feld z. B. <code>id:GC.2.*</code> oder <code>sec:hoch</code> eingeben – die Liste filtert sofort. <button type="button" class="btn small introApplyBtn" data-intro-query="id:GC.2.*">Beispiel anwenden</button></li>
+              <li data-step="4"><strong>Export:</strong> „Selection mode“ an, Controls ankreuzen, Tab <strong>Selected</strong> → Export Profile oder Mini-Catalog. <button type="button" class="btn small introApplyBtn" data-intro-action="go-selected">Zum Selected-Tab</button></li>
+            </ol>
+          </div>
+
+          <h2 id="intro-haupt">Hauptfunktionen des Viewers</h2>
+          <p>Der Viewer bietet folgende <strong>Kernfunktionen</strong>. Jede erfüllt einen klaren Zweck und ist an einer festen Stelle in der Oberfläche umgesetzt.</p>
+
+          <div class="introCard">
+            <h3 id="intro-fn-laden">1. Katalog laden &amp; anzeigen</h3>
+            <p><strong>Zweck:</strong> OSCAL-Catalog-JSON (z. B. Grundschutz++) ins Tool holen und als Baum + Metadaten anzeigen.</p>
+            <p><strong>Wo:</strong> Header – URL-Feld, Button <strong>Laden</strong>, Button <strong>JSON hochladen</strong>. Nach dem Laden: linke Sidebar = Baum (gruppiert/sortierbar), Meta-Pills (Dokument, Version, Visible/Selected/Broken).</p>
+            <p><strong>So geht’s:</strong> URL eintragen (GitHub-blob wird automatisch zu raw) → Laden klicken. Alternativ „JSON hochladen“ und lokale .json wählen. Beim Laden erscheint ein Overlay; danach zeigt der Baum alle Controls.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-suchen">2. Suchen &amp; Filtern</h3>
+            <p><strong>Zweck:</strong> Die angezeigte Liste auf bestimmte Controls einschränken (ID, Sicherheitsstufe, Aufwand, Klasse, Text).</p>
+            <p><strong>Wo:</strong> Linke Sidebar – <strong>Query</strong>-Feld (einzeilig), Dropdowns <strong>sec_level</strong>, <strong>effort_level</strong>, <strong>class</strong>, <strong>Keyword</strong>. Optional <strong>Group by</strong> und <strong>Sort by</strong>.</p>
+            <p><strong>So geht’s:</strong> Query z. B. <code>id:GC.2.* sec:hoch</code> oder <code>has:broken</code> eingeben (AND-Logik). Filter-Dropdowns und Keyword verfeinern. <strong>Reset</strong> setzt alles zurück. Die Zahl „X / Y“ zeigt sichtbare vs. gesamt.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-detail">3. Navigieren &amp; Detailansicht</h3>
+            <p><strong>Zweck:</strong> Einzelne Control lesen (Statement, Guidance, Links, Params, Graph, Notizen).</p>
+            <p><strong>Wo:</strong> Links Baum (Klick auf Zeile), rechts Tab <strong>Detail</strong>. Tastatur <strong>↑</strong> / <strong>↓</strong> für vorherige/nächste Control in der gefilterten Liste.</p>
+            <p><strong>So geht’s:</strong> Im Baum eine Zeile anklicken → rechts erscheinen Statement, Guidance, Relationships, Params, Similarity (TF-IDF), lokaler Graph (Columns/Force, Zoom/Pan), Notes/Review/Evidence, Raw JSON. Deep-Link z. B. <code>#id=GC.1.1</code> springt direkt zu dieser Control.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-selection">4. Auswahl (Selection) &amp; Export</h3>
+            <p><strong>Zweck:</strong> Eine Teilmenge von Controls auswählen und als OSCAL-Profil, Mini-Katalog oder CSV exportieren.</p>
+            <p><strong>Wo:</strong> Sidebar „Selection mode“ aktivieren → Checkboxen im Baum; oder im Detail „Select“. Tab <strong>Selected</strong> für Liste und Export-Buttons.</p>
+            <p><strong>So geht’s:</strong> Selection mode an → Controls im Baum ankreuzen und/oder im Detail „Select“ klicken. Im Tab Selected: <strong>Export Profile</strong> (OSCAL-Profil-Skeleton), <strong>Export Mini-Catalog</strong> (JSON), <strong>Copy IDs</strong>, <strong>Export CSV</strong>. „Add visible“ fügt alle aktuell sichtbaren hinzu; „Prune“ entfernt nicht mehr vorhandene IDs.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-dashboard">5. Dashboard &amp; Analysen</h3>
+            <p><strong>Zweck:</strong> Statistische Auswertungen und Visualisierungen (Verteilungen, Hubs, Broken Links, Ähnlichkeiten).</p>
+            <p><strong>Wo:</strong> Tab <strong>Dashboard</strong>. Scope: All / Visible / Selected. Refresh, dup-thr, Button Near-duplicates.</p>
+            <p><strong>So geht’s:</strong> Tab Dashboard öffnen. Verteilungen (sec_level, effort_level, class, groups), Quantile incoming/outgoing, Top Hubs, Scatter (incoming vs. outgoing), Tabelle Broken links. Near-duplicates: Schwellwert einstellen, Button klicken – TF-IDF-Worker berechnet ähnliche Paare.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-mapping">6. Mapping &amp; Traceability</h3>
+            <p><strong>Zweck:</strong> Beziehungen zwischen Controls als Matrix darstellen und Pfade zwischen zwei Controls finden.</p>
+            <p><strong>Wo:</strong> Tab <strong>Mapping</strong>. Matrix (Scope, rel-Filter), Trace: From / To / Tiefe / rel, Button „Find paths“.</p>
+            <p><strong>So geht’s:</strong> Matrix zeigt Zeilen = Quelle, Spalten = Ziel; Klick auf Zelle springt zur Relation. Trace: From- und To-Control wählen, Tiefe und optional rel setzen → „Find paths“ zeigt gefundene Pfade (bis 25).</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-lint">7. Lint &amp; Qualitätsprüfung</h3>
+            <p><strong>Zweck:</strong> Katalog auf Fehler und Warnungen prüfen (IDs, Titel, Links, Schema).</p>
+            <p><strong>Wo:</strong> Tab <strong>Lint</strong>. Filter All/Errors/Warnings/Info, Tabelle mit Meldungen.</p>
+            <p><strong>So geht’s:</strong> Tab Lint öffnen; Liste zeigt z. B. doppelte IDs, fehlende Titel, defekte Links, Schema-Abweichungen. Klick auf eine Zeile springt zur betroffenen Control. Refresh für erneuten Lauf.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-diff">8. Diff (Katalogvergleich)</h3>
+            <p><strong>Zweck:</strong> Zwei Katalogversionen vergleichen – neu, entfernt, geändert.</p>
+            <p><strong>Wo:</strong> Tab <strong>Diff</strong>. A = aktuell geladen; B = per URL (Load B) oder Upload. Filter New/Removed/Changed, Suchfeld.</p>
+            <p><strong>So geht’s:</strong> Katalog A ist bereits geladen. B per URL oder Datei-Upload laden. Tabelle zeigt New (nur in B), Removed (nur in A), Changed (in beiden, Inhalt geändert). Klick auf Zeile öffnet Detail der Änderungen.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-resources">9. Resources (back-matter)</h3>
+            <p><strong>Zweck:</strong> Ressourcen aus <code>back-matter.resources</code> durchsuchen und referenzierte/unreferenzierte anzeigen.</p>
+            <p><strong>Wo:</strong> Tab <strong>Resources</strong>. Suche, Anzeige All/Referenced/Unreferenced, Tabelle, Detail bei Klick.</p>
+            <p><strong>So geht’s:</strong> Tab Resources öffnen. Liste mit UUID, Titel, Referenzanzahl. Klick auf Zeile → Detail (Titel, Links, Citation, Referenced by). Export CSV. Deep-Link <code>#resource=&lt;uuid&gt;</code> springt zur Resource.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-review">10. Review</h3>
+            <p><strong>Zweck:</strong> Review-Status, Reviewer, Tags und Notizen pro Control erfassen und als CSV/Markdown exportieren.</p>
+            <p><strong>Wo:</strong> Im <strong>Detail</strong>-Panel: Bereich „Notes / Review / Evidence“. Tab <strong>Review</strong> für Übersicht und Export.</p>
+            <p><strong>So geht’s:</strong> Control im Detail öffnen → Review state, Reviewer, Reviewed at, Status, Tags, Decision, Notes, Evidence eintragen → Save. Tab Review zeigt alle Einträge, Filter (z. B. Unreviewed), Suche. Export CSV und Export report (MD) für Dokumentation.</p>
+          </div>
+
+          <div class="introCard">
+            <h3 id="intro-fn-workspace">11. Workspace &amp; Persistenz</h3>
+            <p><strong>Zweck:</strong> Zustand (URL, Tab, Filter, Query, Selection, Notizen) im Browser speichern; optional Offline-Cache.</p>
+            <p><strong>Wo:</strong> Tab <strong>Workspace</strong>. JSON-Preview, Export/Import/Clear Workspace. Cache: Policy, Tabelle, Refresh/Clear. Reviewer-Name.</p>
+            <p><strong>So geht’s:</strong> Alles wird automatisch im localStorage gehalten. Im Tab Workspace: Export sichert den kompletten Workspace als JSON; Import lädt einen gespeicherten Zustand. Cache (IndexedDB): Policy „Prefer cache“ oder „Network first“; bei erneutem Laden wird ggf. aus dem Cache geladen. Clear entfernt alle Cache-Einträge.</p>
+          </div>
+
+          <h2 id="intro-was">Was ist das?</h2>
+          <p>Der <strong>Grundschutz++ OSCAL Viewer</strong> ist eine <strong>Standalone-Webanwendung</strong> (eine einzige HTML-Datei), mit der Sie <strong>OSCAL-Kataloge</strong> – insbesondere den <strong>Grundschutz++-Katalog</strong> des BSI – laden, durchsuchen, filtern und analysieren können.</p>
+          <ul>
+            <li><strong>OSCAL</strong> (Open Security Controls Assessment Language) ist ein offener Standard (NIST) zur maschinenlesbaren Darstellung von Sicherheitskatalogen, Profilen und Bewertungen.</li>
+            <li><strong>Grundschutz++</strong> ist der IT-Grundschutz-Katalog des BSI in OSCAL-Form („Stand der Technik Bibliothek“). Er enthält <strong>Controls</strong> (Anforderungen) mit IDs (z. B. <code>GC.1.1</code>), Statements, Guidance, Metadaten und Verknüpfungen.</li>
+            <li>Der Viewer zeigt diesen Katalog als <strong>Baum/Navigation</strong>, mit <strong>Detailansicht</strong>, <strong>Query-Sprache</strong>, <strong>Dashboard</strong>, <strong>Mapping</strong>, <strong>Lint</strong>, <strong>Diff</strong>, <strong>Review</strong> und <strong>Workspace</strong> – alles im Browser, ohne Server.</li>
+          </ul>
+
+          <h2 id="intro-wozu">Wozu braucht man das?</h2>
+          <ul>
+            <li><strong>Verständnis:</strong> Schnell verstehen, welche Anforderungen (Controls) der Katalog enthält und wie sie zusammenhängen.</li>
+            <li><strong>Suche &amp; Filter:</strong> Gezielt nach ID, Sicherheitsstufe, Aufwand, Klasse oder Text suchen (Query Language + Filter).</li>
+            <li><strong>Auswahl (Selection):</strong> Controls auswählen und als OSCAL-Profil oder Mini-Katalog exportieren – z. B. für ein organisationsspezifisches Profil.</li>
+            <li><strong>Qualität:</strong> Lint-Checks für IDs, Links, Schema; Diff zwischen zwei Katalogversionen.</li>
+            <li><strong>Review:</strong> Lokaler Review-Workflow (Status, Reviewer, Tags, Notizen, Evidence-Links) mit Export als CSV/Markdown.</li>
+            <li><strong>Traceability:</strong> Beziehungen zwischen Controls (Matrix, Pfadsuche) und Broken-Links-Analyse.</li>
+            <li><strong>Offline/Performance:</strong> Optionaler IndexedDB-Cache für schnelleres erneutes Laden und Offline-Nutzung.</li>
+          </ul>
+
+          <h2 id="intro-wie">Wie nutzt man es? (Kurz)</h2>
+          <ol>
+            <li><strong>Katalog laden:</strong> URL eingeben (z. B. Grundschutz++-JSON von GitHub) und auf <strong>Laden</strong> klicken – oder <strong>JSON hochladen</strong>.</li>
+            <li><strong>Navigieren:</strong> Links erscheint der Katalog als Baum (gruppiert/sortierbar). Ein Klick auf eine Zeile öffnet die <strong>Detailansicht</strong> rechts. <strong>Pfeil ↑/↓</strong> wechselt zur vorherigen/nächsten Control.</li>
+            <li><strong>Filtern/Suchen:</strong> Query-Feld (z. B. <code>id:GC.2.* sec:hoch</code>), Filter sec_level/effort_level/class und Keyword nutzen.</li>
+            <li><strong>Selection:</strong> „Selection mode“ aktivieren, Controls per Checkbox auswählen; im Tab <strong>Selected</strong> exportieren (Profile, Mini-Catalog, CSV).</li>
+            <li><strong>Weitere Tabs:</strong> Dashboard, Mapping, Lint, Diff, Resources, Review, Workspace je nach Bedarf nutzen.</li>
+          </ol>
+
+          <h2 id="intro-workflows">Typische Workflows</h2>
+          <div class="introWorkflows">
+            <div class="introWorkflow"><strong>Eine Control nachschlagen</strong> Katalog laden → links Baum nutzen oder Query (z. B. <code>id:GC.1.1</code>) → Detail rechts lesen. <button type="button" class="btn small introApplyBtn" data-intro-query="id:GC.1.1">Query setzen</button></div>
+            <div class="introWorkflow"><strong>Alle „kritischen“ Controls exportieren</strong> Filter sec_level oder Query <code>sec:hoch</code> → Selection mode → „Add visible“ → Tab Selected → Export Mini-Catalog oder Profile.</div>
+            <div class="introWorkflow"><strong>Zwei Katalogversionen vergleichen</strong> Katalog A laden → Tab Diff → B per URL oder Upload laden → New/Removed/Changed prüfen.</div>
+            <div class="introWorkflow"><strong>Review-Status erfassen</strong> Controls im Detail durchgehen → Notes/Review ausfüllen → Save → Tab Review für Übersicht und Export CSV/MD.</div>
+          </div>
+
+          <h2 id="intro-toc">Alle Items &amp; Komponenten im Überblick</h2>
+          <div class="introToc">
+            <ul>
+              <li><a href="#einfuehrung-intro-schnell">Erste Schritte</a></li>
+              <li><strong>Hauptfunktionen</strong>
+                <ul style="margin:4px 0 0 1em; font-weight:normal;">
+                  <li><a href="#einfuehrung-intro-fn-laden">1. Katalog laden</a> · <a href="#einfuehrung-intro-fn-suchen">2. Suchen &amp; Filtern</a> · <a href="#einfuehrung-intro-fn-detail">3. Detail</a> · <a href="#einfuehrung-intro-fn-selection">4. Selection &amp; Export</a></li>
+                  <li><a href="#einfuehrung-intro-fn-dashboard">5. Dashboard</a> · <a href="#einfuehrung-intro-fn-mapping">6. Mapping</a> · <a href="#einfuehrung-intro-fn-lint">7. Lint</a> · <a href="#einfuehrung-intro-fn-diff">8. Diff</a></li>
+                  <li><a href="#einfuehrung-intro-fn-resources">9. Resources</a> · <a href="#einfuehrung-intro-fn-review">10. Review</a> · <a href="#einfuehrung-intro-fn-workspace">11. Workspace</a></li>
+                </ul>
+              </li>
+              <li><a href="#einfuehrung-intro-workflows">Typische Workflows</a></li>
+              <li><a href="#einfuehrung-intro-header">Header (Laden, Meta-Pills, Buttons)</a></li>
+              <li><a href="#einfuehrung-intro-sidebar">Sidebar (Query, Filter, Baum)</a></li>
+              <li><a href="#einfuehrung-intro-tabs">Hauptbereich: Tabs (Detail, Dashboard, …)</a></li>
+              <li><a href="#einfuehrung-intro-detail">Detail-Panel (Statement, Guidance, Links, …)</a></li>
+              <li><a href="#einfuehrung-intro-dashboard">Dashboard</a></li>
+              <li><a href="#einfuehrung-intro-selected">Selected (Selection &amp; Export)</a></li>
+              <li><a href="#einfuehrung-intro-mapping">Mapping &amp; Trace</a></li>
+              <li><a href="#einfuehrung-intro-lint">Lint</a></li>
+              <li><a href="#einfuehrung-intro-diff">Diff</a></li>
+              <li><a href="#einfuehrung-intro-resources">Resources</a></li>
+              <li><a href="#einfuehrung-intro-review">Review</a></li>
+              <li><a href="#einfuehrung-intro-workspace">Workspace</a></li>
+              <li><a href="#einfuehrung-intro-query">Query-Sprache (Referenz)</a></li>
+              <li><a href="#einfuehrung-intro-glossar">Kurz-Glossar</a></li>
+              <li><a href="#einfuehrung-intro-faq">Häufige Fragen</a></li>
+              <li><a href="#einfuehrung-intro-shortcuts">Deep-Links &amp; Shortcuts</a></li>
+            </ul>
+          </div>
+
+          <h2 id="intro-header">Header (Laden, Meta-Pills, Buttons)</h2>
+          <p>Oben in der Leiste:</p>
+          <table class="doc">
+            <thead><tr><th>Element</th><th>Funktion</th></tr></thead>
+            <tbody>
+              <tr><td><strong>URL-Feld</strong></td><td>Adresse des OSCAL-Catalog-JSON (z. B. GitHub raw).</td></tr>
+              <tr><td><strong>Laden</strong></td><td>Lädt den Katalog von der URL (GitHub blob → raw automatisch).</td></tr>
+              <tr><td><strong>JSON hochladen</strong></td><td>Lokale .json-Datei laden.</td></tr>
+              <tr><td><strong>Status</strong></td><td>„bereit“, „Laden…“, Fehler. Während des Ladens erscheint ein Overlay mit Spinner.</td></tr>
+              <tr><td><strong>Dokument / OSCAL / Version / Last modified / Quelle</strong></td><td>Metadaten des geladenen Katalogs.</td></tr>
+              <tr><td><strong>Visible / Selected / Broken</strong></td><td>Anzahl sichtbarer, ausgewählter Controls und defekter Links.</td></tr>
+              <tr><td><strong>Query Help</strong></td><td>Öffnet die Query-Syntax und Shortcuts.</td></tr>
+              <tr><td><strong>Dashboard / Workspace</strong></td><td>Wechselt direkt in den jeweiligen Tab.</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="intro-sidebar">Sidebar (Query, Filter, Baum)</h2>
+          <p>Linke Spalte: <strong>Query</strong> (einzeilig, AND-Logik), <strong>Filter</strong> (sec_level, effort_level, class), <strong>Keyword</strong>, <strong>Group by</strong> (OSCAL / sec_level / effort_level / class), <strong>Sort by</strong> (original, ID, Titel, …), <strong>DESC</strong>, <strong>Reset</strong>. View: <strong>Compact</strong>, <strong>Snippets</strong>. <strong>Selection mode</strong> + <strong>Clear</strong>. Der <strong>Baum</strong> listet alle (gefilterten) Controls; Caret zum Auf-/Zuklappen von Gruppen; Klick öffnet Detail; Badges (sec, eff, class, in/out/broken).</p>
+
+          <h2 id="intro-tabs">Hauptbereich: Tabs</h2>
+          <table class="doc">
+            <thead><tr><th>Tab</th><th>Inhalt</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Detail</strong></td><td>Detailansicht der gewählten Control: Statement, Guidance, Links, Params, Similarity (TF-IDF), lokaler Graph (Columns/Force, Zoom/Pan), Notes/Review/Evidence, Raw JSON.</td></tr>
+              <tr><td><strong>Dashboard</strong></td><td>Verteilungen (sec/eff/class/groups), Quantile, Hubs, Scatter, Broken Links, Near-Duplicates.</td></tr>
+              <tr><td><strong>Selected</strong></td><td>Ausgewählte Controls; Export Profile, Mini-Catalog, CSV; Bulk Review/Tags; Add visible, Prune.</td></tr>
+              <tr><td><strong>Mapping</strong></td><td>Relationship-Matrix und Trace-Pfadsuche (From → To).</td></tr>
+              <tr><td><strong>Lint</strong></td><td>Qualitätsprüfungen (IDs, Links, Schema); Filter Error/Warn/Info.</td></tr>
+              <tr><td><strong>Diff</strong></td><td>Vergleich zweier Kataloge (A = aktuell, B = URL/Upload); New/Removed/Changed.</td></tr>
+              <tr><td><strong>Resources</strong></td><td>back-matter.resources durchsuchen; Referenced/Unreferenced; Detail, Export CSV.</td></tr>
+              <tr><td><strong>Review</strong></td><td>Review-Übersicht (Status, Reviewer, Tags); Export CSV/MD.</td></tr>
+              <tr><td><strong>Workspace</strong></td><td>localStorage: UI-Zustand, Selection, Notes; IndexedDB-Cache, Policy, Reviewer-Name; Export/Import/Clear.</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="intro-detail">Detail-Panel (eine Control)</h2>
+          <p><strong>Kopfzeile:</strong> ID, Titel, Pills (sec, eff, class, incoming, outgoing, broken, alias, Review). Buttons: Copy ID, Copy deep-link, Export MD, Copy MD, Select/Selected.</p>
+          <p><strong>Statement / Guidance:</strong> Normativer Text und Empfehlungen; Parameter klickbar.</p>
+          <p><strong>Relationships:</strong> Outgoing/Incoming Tabellen (rel, href, Ziel, broken).</p>
+          <p><strong>Params:</strong> OSCAL-Parameter; Klick für Deep-Link.</p>
+          <p><strong>Similarity (TF-IDF):</strong> Ähnliche Controls (Worker); Modi: all, statement, guidance.</p>
+          <p><strong>Visualization (Local graph):</strong> Knoten dieser Control + Nachbarn; Layout <strong>Columns</strong> oder <strong>Force</strong>; im Force-Layout Knoten ziehen; <strong>Zoom</strong> (Mausrad), <strong>Pan</strong> (Hintergrund ziehen).</p>
+          <p><strong>Notes / Review / Evidence:</strong> Review state, Reviewer, Reviewed at, Status, Tags, Decision, Notes, Evidence-Tabelle; nur lokal im Workspace.</p>
+          <p><strong>Raw JSON:</strong> Rohe Control-Struktur.</p>
+
+          <h2 id="intro-dashboard">Dashboard</h2>
+          <p>Scope (All / Visible / Selected), Refresh. Verteilungen sec/eff/class/groups, Quantile, Top hubs, Scatter (incoming vs outgoing), Broken links, Near-duplicates (dup-thr, TF-IDF Worker).</p>
+
+          <h2 id="intro-selected">Selected (Selection &amp; Export)</h2>
+          <p>Export Profile (OSCAL), Mini-Catalog (JSON), Copy IDs, Export CSV. Bulk: Review-State oder Tag auf alle anwenden. Add visible, Prune.</p>
+
+          <h2 id="intro-mapping">Mapping &amp; Trace</h2>
+          <p>Matrix: Controls → Controls (Scope Selected/Visible, rel-Filter). Trace: From → To, Tiefe, rel; „Find paths“ zeigt Pfade.</p>
+
+          <h2 id="intro-lint">Lint</h2>
+          <p>Prüfungen (doppelte IDs, fehlende Titel, defekte Links, Schema). Filter All/Errors/Warnings/Info. Klick springt zur Control.</p>
+
+          <h2 id="intro-diff">Diff</h2>
+          <p>A = aktuell geladen, B = URL oder Upload. New, Removed, Changed; Filter und Suche; Detail bei Klick.</p>
+
+          <h2 id="intro-resources">Resources</h2>
+          <p>Liste back-matter.resources; Suche, Referenced/Unreferenced; Detail (Titel, Links, Citation, Referenced by); Export CSV.</p>
+
+          <h2 id="intro-review">Review</h2>
+          <p>Übersicht Review-Daten aus Workspace; Filter/Suche; Export CSV und Markdown-Report.</p>
+
+          <h2 id="intro-workspace">Workspace</h2>
+          <p>localStorage: letzte URL, Tab, Filter, Query, View, Selection, Notes pro Control (status, tags, evidence, review state, reviewer, reviewedAt). Export/Import/Clear. IndexedDB-Cache (Policy, Refresh/Clear), Reviewer-Name, JSON-Preview.</p>
+
+          <h2 id="intro-query">Query-Sprache (Referenz)</h2>
+          <p>AND-Verknüpfung; Negation mit <code>-</code>.</p>
+          <table class="doc">
+            <thead><tr><th>Token</th><th>Bedeutung</th></tr></thead>
+            <tbody>
+              <tr><td><code>id:GC.2.*</code></td><td>ID mit Wildcards * ?</td></tr>
+              <tr><td><code>sec:hoch</code> / <code>eff:2</code> / <code>class:technical</code></td><td>Sicherheitsstufe, Aufwand, Klasse</td></tr>
+              <tr><td><code>rel:related</code></td><td>Mindestens ein Link mit dieser rel</td></tr>
+              <tr><td><code>incoming&gt;5</code> / <code>outgoing&gt;=2</code></td><td>Anzahl Links</td></tr>
+              <tr><td><code>has:broken</code> / <code>has:statement</code> / <code>has:guidance</code> / <code>has:links</code> / <code>has:unreferenced</code></td><td>Eigenschaften</td></tr>
+              <tr><td><code>alias:&lt;uuid&gt;</code></td><td>Control über alt-identifier</td></tr>
+              <tr><td><code>"quoted phrase"</code></td><td>Phrase im Text</td></tr>
+              <tr><td><code>-has:broken</code></td><td>Negation</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="intro-shortcuts">Deep-Links &amp; Shortcuts</h2>
+          <p><strong>URL-Hashes:</strong> <code>#id=GC.1.1</code> · <code>#alias=&lt;uuid&gt;</code> · <code>#group=&lt;id&gt;</code> · <code>#param=&lt;pid&gt;&amp;id=&lt;cid&gt;</code> · <code>#rel=&lt;rel&gt;&amp;id=&lt;cid&gt;</code> · <code>#resource=&lt;uuid&gt;</code></p>
+          <p><strong>Tastatur:</strong> <code>/</code> Query-Fokus · <code>↑</code> <code>↓</code> Vorherige/Nächste Control · <code>n</code> <code>p</code> Next/Prev Highlight (Detail) · <code>Esc</code> Modals schließen</p>
+
+          <h2 id="intro-glossar">Kurz-Glossar</h2>
+          <dl class="introGlossary">
+            <dt>Control</dt><dd>Eine Anforderung im Katalog (z. B. GC.1.1) mit ID, Titel, Statement, Guidance, Parametern und Links.</dd>
+            <dt>Statement</dt><dd>Der normativ formulierte Text der Anforderung („Was muss erfüllt werden?“).</dd>
+            <dt>Guidance</dt><dd>Hilfestellung zur Umsetzung der Anforderung (nicht normativ).</dd>
+            <dt>rel</dt><dd>Typ einer Beziehung zwischen Controls (z. B. related, references).</dd>
+            <dt>Catalog</dt><dd>OSCAL-Dokument mit Metadaten, Gruppen und Controls.</dd>
+            <dt>Profile</dt><dd>OSCAL-Profil: referenziert einen Catalog und wählt Controls aus (with-ids, with-controls).</dd>
+            <dt>Broken Link</dt><dd>Ein ausgehender Link (href), der auf keine gültige Control oder Resource im Katalog zeigt.</dd>
+          </dl>
+
+          <h2 id="intro-faq">Häufige Fragen</h2>
+          <dl class="introFaq">
+            <dt>Der Katalog lädt nicht – was tun?</dt>
+            <dd>Bei externen URLs: CORS kann blockieren. Nutzen Sie „JSON hochladen“ oder eine URL, die CORS erlaubt. Bei GitHub: der Viewer wandelt blob-URLs automatisch in raw um.</dd>
+            <dt>Es werden keine Treffer angezeigt.</dt>
+            <dd>Query oder Filter lockern (z. B. Query leeren, Reset), oder sec_level/effort_level/class auf „(alle)“ stellen.</dd>
+            <dt>Die Selection bleibt leer.</dt>
+            <dd>„Selection mode“ muss aktiviert sein (Toggle in der Sidebar). Dann können Sie im Baum per Checkbox auswählen oder in der Detailansicht „Select“ klicken.</dd>
+            <dt>Wo werden meine Notizen gespeichert?</dt>
+            <dd>Im <strong>Workspace</strong> (localStorage im Browser). Export/Import im Tab Workspace sichert oder überträgt den kompletten Zustand.</dd>
+          </dl>
+
+          <div class="introTip"><strong>Tipp:</strong> Lade einen Katalog (URL oder Upload), dann links eine Control anklicken oder mit ↑/↓ durch die Liste gehen – rechts erscheint die Detailansicht. Über die Tabs oben wechseln Sie zu Dashboard, Selected, Mapping usw.</div>
+          <p class="introFooter">Grundschutz++ OSCAL Viewer · Einführung &amp; Erklärung · Stand: Viewer v5-final</p>
+        </div>
       </div>
 
       <div id="panel-detail" class="panel">
@@ -1227,6 +1576,7 @@
       <div class="help">
         <div style="font-weight:750; color:var(--text); margin-bottom:8px;">Shortcuts</div>
         <div><span class="mono">/</span> Fokus auf Query</div>
+        <div><span class="mono">↑</span>/<span class="mono">↓</span> Nächste/Vorherige Control in der Liste</div>
         <div><span class="mono">n</span>/<span class="mono">p</span> Next/Prev Highlight (wenn Detail aktiv)</div>
         <div><span class="mono">Esc</span> schließt Modals</div>
       </div>
@@ -1264,10 +1614,18 @@ const nowISO = ()=> new Date().toISOString().slice(0,10);
 let toastTimer = null;
 function toast(msg, ms=2200){
   const t = $("#toast");
-  t.innerHTML = msg;
+  t.textContent = String(msg ?? "");
   t.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove("show"), ms);
+}
+
+function debounce(fn, wait=150){
+  let timer = null;
+  return (...args)=>{
+    clearTimeout(timer);
+    timer = setTimeout(()=>fn(...args), wait);
+  };
 }
 
 /* ---------- GitHub blob → raw ---------- */
@@ -1308,7 +1666,8 @@ const defaultWS = ()=>({
     query: "",
     cachePolicy: "network",
     reviewerName: "",
-    nearDupThreshold: 0.82
+    nearDupThreshold: 0.82,
+    localGraphLayout: "columns"
   },
   expanded: {}, // key->bool
   selection: [], // array of control IDs
@@ -1903,9 +2262,46 @@ function buildTreeModel(){
   return root;
 }
 
+let TREE_EVENTS_BOUND = false;
+function bindTreeEvents(){
+  if(TREE_EVENTS_BOUND) return;
+  const el = $("#tree");
+  if(!el) return;
+
+  el.addEventListener("click", (e)=>{
+    const cb = e.target?.closest?.(".selcb");
+    if(cb){
+      const row = cb.closest('.treeRow[data-kind="control"]');
+      if(!row) return;
+      toggleSelected(row.dataset.id, cb.checked);
+      return;
+    }
+
+    const row = e.target?.closest?.(".treeRow");
+    if(!row || !el.contains(row)) return;
+
+    if(row.dataset.kind==="group"){
+      const key = row.dataset.key || "";
+      const expanded = (WS.expanded[key]!==undefined) ? WS.expanded[key] : true;
+      WS.expanded[key] = !expanded;
+      saveWS();
+      renderTree();
+      return;
+    }
+
+    if(row.dataset.kind==="control"){
+      const id = row.dataset.id || "";
+      if(id) openControl(id);
+    }
+  });
+
+  TREE_EVENTS_BOUND = true;
+}
+
 function renderTree(){
   const el = $("#tree");
   if(!el) return;
+  bindTreeEvents();
   el.innerHTML = "";
   if(!IDX){
     el.innerHTML = `<div class="treeRow"><div class="nodeBody"><div class="ntitle">Kein Katalog geladen</div></div></div>`;
@@ -1916,16 +2312,7 @@ function renderTree(){
   const selectionMode = $("#selModeBtn").getAttribute("aria-pressed")==="true";
   const compact = $("#compactBtn").getAttribute("aria-pressed")==="true";
   const showSnippets = $("#snippetBtn").getAttribute("aria-pressed")==="true";
-
-  const rows = [];
-  function walk(node, depth){
-    if(node.type==="group" || node.type==="root"){
-      for(const ch of node.children){
-        walk(ch, depth + (node.type==="root"?0:1));
-      }
-      return;
-    }
-  }
+  const frag = document.createDocumentFragment();
   // We'll render with a stack, preserving groups as collapsible
   function renderNode(node, depth, parentKey){
     if(node.type==="group"){
@@ -1948,13 +2335,7 @@ function renderTree(){
           </div>
         </div>
       `;
-      row.addEventListener("click", (e)=>{
-        if(e.target?.classList?.contains("selcb")) return;
-        WS.expanded[key] = !((WS.expanded[key]!==undefined)?WS.expanded[key]:true);
-        saveWS();
-        renderTree();
-      });
-      el.appendChild(row);
+      frag.appendChild(row);
       if(expanded){
         for(const ch of node.children) renderNode(ch, depth+1, key);
       }
@@ -1991,18 +2372,7 @@ function renderTree(){
           ${snippet}
         </div>
       `;
-
-      // clicking checkbox shouldn't open detail (but still update selection)
-      row.addEventListener("click", (e)=>{
-        const target = e.target;
-        if(target && target.classList.contains("selcb")){
-          toggleSelected(c.id, target.checked);
-          return;
-        }
-        openControl(c.id);
-      });
-
-      el.appendChild(row);
+      frag.appendChild(row);
     }
   }
 
@@ -2010,6 +2380,7 @@ function renderTree(){
   for(const child of model.children){
     renderNode(child, 0, "root");
   }
+  el.appendChild(frag);
 
   // Update selected count
   $("#selectedCount").textContent = String(getSelection().length);
@@ -2079,213 +2450,14 @@ function updateHash(){
 }
 
 function setStatus(s){ $("#status").textContent = s; }
-
-function renderDetail(){
-  const host = $("#detail");
-  if(!host) return;
-  if(!ACTIVE_ID){
-    host.className = "empty";
-    host.innerHTML = `<div style="font-size:14px; margin-bottom:6px;">Noch nichts ausgewählt.</div><div class="small">Klicke links eine Control an.</div>`;
-    return;
-  }
-  const c = IDX.byId.get(ACTIVE_ID);
-  const counts = IDX.counts.get(c.id) || {incoming:0,outgoing:0,broken:0};
-
-  host.className = "detailCard";
-
-  // Notes workspace fields
-  const note = WS.notes[c.id] || {status:"", tags:[], notes:"", decision:"", date:"", evidence:[]};
-  const status = note.status || "";
-  const tags = (note.tags||[]).join(", ");
-  const decision = note.decision || "";
-  const date = note.date || "";
-
-  const statementHTML = linkifyParams(highlightProse(c.statement||""));
-  const guidanceHTML  = linkifyParams(highlightProse(c.guidance||""));
-
-  const incomingList = (IDX.incoming.get(c.id)||[]);
-  const outgoingList = (IDX.outgoing.get(c.id)||[]);
-
-  host.innerHTML = `
-    <div class="detailHeader">
-      <div>
-        <h2><span class="mono">${esc(c.id)}</span> — ${esc(c.title||"(no title)")}</h2>
-        <div class="split" style="margin-top:8px;">
-          ${c.sec_level? `<span class="pill"><strong>sec</strong> ${esc(c.sec_level)}</span>`:""}
-          ${c.effort_level? `<span class="pill"><strong>eff</strong> ${esc(c.effort_level)}</span>`:""}
-          ${c.class? `<span class="pill"><strong>class</strong> ${esc(c.class)}</span>`:""}
-          <span class="pill"><strong>incoming</strong> ${counts.incoming}</span>
-          <span class="pill"><strong>outgoing</strong> ${counts.outgoing}</span>
-          <span class="pill ${counts.broken? "bad":"ok"}"><strong>broken</strong> ${counts.broken}</span>
-          ${c.altIds?.length? `<span class="pill"><strong>alias</strong> ${esc(c.altIds[0])}${c.altIds.length>1?` +${c.altIds.length-1}`:""}</span>`:""}
-        </div>
-      </div>
-
-      <div class="split">
-        <button class="btn" id="copyIdBtn">Copy ID</button>
-        <button class="btn" id="copyLinkBtn">Copy deep-link</button>
-        <button class="btn tgl" id="selThisBtn" aria-pressed="${isSelected(c.id)?"true":"false"}">${isSelected(c.id)?"Selected":"Select"}</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <h3>Statement</h3>
-      <div class="prose" id="proseStatement">${statementHTML || `<span class="muted">(leer)</span>`}</div>
-    </div>
-
-    <div class="section">
-      <h3>Guidance</h3>
-      <div class="prose" id="proseGuidance">${guidanceHTML || `<span class="muted">(leer)</span>`}</div>
-    </div>
-
-    <details class="acc" open>
-      <summary>Relationships / Links</summary>
-      <div class="accBody">
-        <div class="kv">
-          <div class="k">Outgoing</div>
-          <div class="v">${renderOutgoingTable(outgoingList)}</div>
-          <div class="k">Incoming</div>
-          <div class="v">${renderIncomingTable(incomingList)}</div>
-        </div>
-      </div>
-    </details>
-
-    <details class="acc">
-      <summary>Params</summary>
-      <div class="accBody">
-        ${renderParams(c.params)}
-      </div>
-    </details>
-
-    <details class="acc">
-      <summary>Visualization (Local graph)</summary>
-      <div class="accBody">
-        ${renderLocalGraph(c.id)}
-      </div>
-    </details>
-
-    <details class="acc">
-      <summary>Notes / Status / Tags (Workspace)</summary>
-      <div class="accBody">
-        <div class="grid3">
-          <div>
-            <div class="label">Status</div>
-            <select id="noteStatus" class="select">
-              <option value="">(none)</option>
-              <option value="todo">todo</option>
-              <option value="accepted">accepted</option>
-              <option value="not-applicable">not-applicable</option>
-              <option value="needs-clarification">needs-clarification</option>
-            </select>
-          </div>
-          <div>
-            <div class="label">Tags (comma separated)</div>
-            <div class="field"><input id="noteTags" type="text" placeholder="e.g. policy, ticket-123, risk" /></div>
-          </div>
-          <div>
-            <div class="label">Decision date</div>
-            <div class="field"><input id="noteDate" type="text" placeholder="YYYY-MM-DD" /></div>
-          </div>
-        </div>
-
-        <div style="height:10px"></div>
-        <div class="label">Decision / Rationale</div>
-        <div class="field"><input id="noteDecision" type="text" placeholder="Kurzentscheidung / Begründung" /></div>
-
-        <div style="height:10px"></div>
-        <div class="label">Notes</div>
-        <textarea id="noteText" placeholder="Notizen…"></textarea>
-
-        <div style="height:12px"></div>
-        <div class="split" style="justify-content:space-between;">
-          <div style="font-weight:700;">Evidence / Links</div>
-          <button id="addEvidenceBtn" class="btn small">+ Add</button>
-        </div>
-
-        <div style="height:8px"></div>
-        <table class="table" id="evidenceTable">
-          <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-
-        <div style="height:10px"></div>
-        <div class="split">
-          <button id="noteSaveBtn" class="btn primary">Save</button>
-          <button id="noteClearBtn" class="btn danger">Clear notes for this control</button>
-          <span class="small muted">Alles lokal im Workspace-JSON.</span>
-        </div>
-      </div>
-    </details>
-
-    <details class="acc">
-      <summary>Raw JSON (Control)</summary>
-      <div class="accBody">
-        <pre class="code">${esc(JSON.stringify(c.raw, null, 2))}</pre>
-      </div>
-    </details>
-  `;
-
-  // bind buttons
-  $("#copyIdBtn").onclick = ()=>{ navigator.clipboard?.writeText(c.id); toast(`Copied ${esc(c.id)}`); };
-  $("#copyLinkBtn").onclick = ()=>{ 
-    const link = `${location.origin}${location.pathname}#id=${encodeURIComponent(c.id)}`;
-    navigator.clipboard?.writeText(link);
-    toast(`Copied deep-link <span class="muted">${esc(link)}</span>`, 2600);
-  };
-  $("#selThisBtn").onclick = ()=>{
-    const cur = isSelected(c.id);
-    toggleSelected(c.id, !cur);
-    $("#selThisBtn").setAttribute("aria-pressed", (!cur)?"true":"false");
-    $("#selThisBtn").textContent = (!cur)?"Selected":"Select";
-  };
-
-  // notes fields initial
-  $("#noteStatus").value = status;
-  $("#noteTags").value = tags;
-  $("#noteDecision").value = decision;
-  $("#noteDate").value = date;
-  $("#noteText").value = note.notes || "";
-  renderEvidenceTable(c.id);
-
-  $("#noteSaveBtn").onclick = ()=>saveNotesFor(c.id);
-  $("#noteClearBtn").onclick = ()=>{ delete WS.notes[c.id]; saveWS(); toast("Notes cleared"); renderDetail(); };
-  $("#addEvidenceBtn").onclick = ()=>{ addEvidenceRow(c.id); };
-
-  // param clicks
-  $$(".param", host).forEach(sp=>{
-    sp.addEventListener("click", ()=>{
-      const pid = sp.dataset.pid;
-      if(pid){
-        ACTIVE_PARAM = pid;
-        WS.lastHash = `#param=${encodeURIComponent(pid)}&id=${encodeURIComponent(c.id)}`;
-        saveWS();
-        updateHash();
-        toast(`Param ${esc(pid)}`);
-      }
-    });
-  });
-
-  // outgoing rel group deep-link clicks
-  $$(".relLink", host).forEach(a=>{
-    a.addEventListener("click", (e)=>{
-      e.preventDefault();
-      const rel = a.dataset.rel;
-      if(rel){
-        ACTIVE_REL = {rel, fromId:c.id};
-        WS.lastHash = `#rel=${encodeURIComponent(rel)}&id=${encodeURIComponent(c.id)}`;
-        saveWS();
-        updateHash();
-        toast(`rel:${esc(rel)}`);
-      }
-    });
-  });
-
-  // initialize highlight nav after rendering prose
-  buildHighlights();
-
-  // update prev/next button enablement
-  updateHighlightButtons();
+function setLoading(show){
+  const el = $("#loadingIndicator");
+  if(!el) return;
+  if(show){ el.removeAttribute("hidden"); el.querySelector(".loadingText").textContent = "Laden…"; }
+  else el.setAttribute("hidden", "");
 }
+
+/* renderDetail is defined in the v5 section below. */
 
 function highlightProse(text){
   // highlight terms (same as list)
@@ -2377,6 +2549,98 @@ function renderParams(params){
 }
 
 /* ---------- Local graph visualization ---------- */
+function computeForceLayout(nodes, edges, opts){
+  const w = opts.w, h = opts.h, pad = opts.pad || 18;
+  const centerId = opts.centerId;
+  const pos = new Map();
+  const vel = new Map();
+  const ids = nodes.map(n=>n.id);
+  const nCount = Math.max(1, ids.length);
+  const cx = w/2, cy = h/2;
+  const r0 = Math.min(w, h) * 0.34;
+
+  for(let i=0;i<ids.length;i++){
+    const id = ids[i];
+    if(id===centerId){
+      pos.set(id, {x:cx, y:cy});
+      vel.set(id, {x:0, y:0});
+      continue;
+    }
+    const a = (i / nCount) * Math.PI * 2;
+    pos.set(id, {x: cx + Math.cos(a)*r0, y: cy + Math.sin(a)*r0});
+    vel.set(id, {x:0, y:0});
+  }
+
+  const linkLen = Math.min(190, Math.max(90, Math.sqrt((w*h)/Math.max(1,nCount))*1.1));
+  const springK = 0.025;
+  const repulseK = 7000;
+  const gravityK = 0.008;
+  const damping = 0.85;
+  const iters = 140;
+
+  for(let it=0; it<iters; it++){
+    const f = new Map(ids.map(id=>[id, {x:0, y:0}]));
+
+    for(let i=0;i<ids.length;i++){
+      const a = ids[i];
+      const pa = pos.get(a);
+      for(let j=i+1;j<ids.length;j++){
+        const b = ids[j];
+        const pb = pos.get(b);
+        let dx = pa.x - pb.x;
+        let dy = pa.y - pb.y;
+        let d2 = dx*dx + dy*dy;
+        if(d2 < 0.01){
+          dx = (Math.random()-0.5) * 0.5;
+          dy = (Math.random()-0.5) * 0.5;
+          d2 = dx*dx + dy*dy;
+        }
+        const d = Math.sqrt(d2);
+        const fr = repulseK / d2;
+        const fx = (dx/d) * fr;
+        const fy = (dy/d) * fr;
+        f.get(a).x += fx; f.get(a).y += fy;
+        f.get(b).x -= fx; f.get(b).y -= fy;
+      }
+    }
+
+    for(const e of edges){
+      const pa = pos.get(e.from);
+      const pb = pos.get(e.to);
+      if(!pa || !pb) continue;
+      let dx = pb.x - pa.x;
+      let dy = pb.y - pa.y;
+      let d = Math.sqrt(dx*dx + dy*dy);
+      if(d < 0.001) d = 0.001;
+      const fs = springK * (d - linkLen);
+      const fx = (dx/d) * fs;
+      const fy = (dy/d) * fs;
+      f.get(e.from).x += fx; f.get(e.from).y += fy;
+      f.get(e.to).x -= fx; f.get(e.to).y -= fy;
+    }
+
+    for(const id of ids){
+      const p = pos.get(id);
+      const ff = f.get(id);
+      ff.x += (cx - p.x) * gravityK;
+      ff.y += (cy - p.y) * gravityK;
+      if(id===centerId){
+        p.x = cx; p.y = cy;
+        vel.get(id).x = 0; vel.get(id).y = 0;
+        continue;
+      }
+      const v = vel.get(id);
+      v.x = (v.x + ff.x) * damping;
+      v.y = (v.y + ff.y) * damping;
+      p.x += v.x * 0.18;
+      p.y += v.y * 0.18;
+      p.x = clamp(p.x, pad, w - pad);
+      p.y = clamp(p.y, pad, h - pad);
+    }
+  }
+  return pos;
+}
+
 function renderLocalGraph(centerId){
   const c = IDX.byId.get(centerId);
   if(!c) return `<span class="muted">(no graph)</span>`;
@@ -2403,17 +2667,17 @@ function renderLocalGraph(centerId){
   const yIn = yPositions(incU.length || 1);
   const yOut = yPositions(outU.length || 1);
 
-  const pos = new Map();
-  pos.set(centerId, {x:colX.center, y:h/2});
-  incU.forEach((id,i)=>pos.set(id, {x:colX.in, y:yIn[i]}));
-  outU.forEach((id,i)=>pos.set(id, {x:colX.out, y:yOut[i]}));
+  const posColumns = new Map();
+  posColumns.set(centerId, {x:colX.center, y:h/2});
+  incU.forEach((id,i)=>posColumns.set(id, {x:colX.in, y:yIn[i]}));
+  outU.forEach((id,i)=>posColumns.set(id, {x:colX.out, y:yOut[i]}));
 
   const edges = [];
   for(const from of incU){
     edges.push({from, to:centerId, cls:"in", rel:"incoming"});
   }
   for(const o of (IDX.outgoing.get(centerId)||[])){
-    if(o.targetType==="control" && pos.has(o.targetId)){
+    if(o.targetType==="control" && posColumns.has(o.targetId)){
       edges.push({from:centerId, to:o.targetId, cls:"", rel:o.rel||""});
     }
   }
@@ -2421,10 +2685,15 @@ function renderLocalGraph(centerId){
   broken.slice(0,6).forEach((b,i)=>{
     const stubId = `broken:${i}`;
     const y = pad + i*22;
-    pos.set(stubId, {x: colX.out+120, y});
+    posColumns.set(stubId, {x: colX.out+120, y});
     nodes.push({id:stubId, kind:"broken", label: b.href || b.targetId || "broken"});
     edges.push({from:centerId, to:stubId, cls:"broken", rel:b.rel||"broken"});
   });
+
+  const layout = (WS.ui?.localGraphLayout === "force") ? "force" : "columns";
+  const pos = (layout==="force")
+    ? computeForceLayout(nodes, edges, {w, h, pad, centerId})
+    : posColumns;
 
   const nodeSVG = nodes.map(n=>{
     const p = pos.get(n.id) || {x:0,y:0};
@@ -2435,7 +2704,7 @@ function renderLocalGraph(centerId){
     const x = p.x - wBox/2;
     const y = p.y - hBox/2;
     return `
-      <g class="gNode ${isCenter?"center":""}" data-id="${esc(n.id)}" transform="translate(${x},${y})">
+      <g class="gNode ${isCenter?"center":""}" data-id="${esc(n.id)}" data-cx="${p.x}" data-cy="${p.y}" data-w="${wBox}" data-h="${hBox}" transform="translate(${x},${y})">
         <rect width="${wBox}" height="${hBox}"></rect>
         <text x="10" y="22">${esc(label).slice(0, 22)}${label.length>22?"…":""}</text>
       </g>
@@ -2446,22 +2715,33 @@ function renderLocalGraph(centerId){
     const a = pos.get(e.from);
     const b = pos.get(e.to);
     if(!a||!b) return "";
-    const dx = (b.x-a.x);
-    const cp1x = a.x + dx*0.4;
-    const cp2x = a.x + dx*0.6;
-    const d = `M ${a.x} ${a.y} C ${cp1x} ${a.y}, ${cp2x} ${b.y}, ${b.x} ${b.y}`;
+    let d = "";
+    if(layout==="force"){
+      d = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+    }else{
+      const dx = (b.x-a.x);
+      const cp1x = a.x + dx*0.4;
+      const cp2x = a.x + dx*0.6;
+      d = `M ${a.x} ${a.y} C ${cp1x} ${a.y}, ${cp2x} ${b.y}, ${b.x} ${b.y}`;
+    }
     return `<path class="gEdge ${e.cls||""}" data-rel="${esc(e.rel||"")}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${d}"></path>`;
   }).join("");
 
   const html = `
     <div class="graphWrap">
       <div class="graphHdr">
-        <div class="small">Local graph: incoming (left) / outgoing (right). Click node to open.</div>
-        <div class="small muted">Limits: in≤10 · out≤12 · broken≤6</div>
+        <div class="small">Local graph: click node to open. Drag background to pan, wheel to zoom (Force).</div>
+        <div class="split">
+          <button class="btn small tgl graphLayoutBtn" data-layout="columns" aria-pressed="${layout==="columns" ? "true" : "false"}">Columns</button>
+          <button class="btn small tgl graphLayoutBtn" data-layout="force" aria-pressed="${layout==="force" ? "true" : "false"}">Force</button>
+          <div class="small muted">Limits: in≤10 · out≤12 · broken≤6</div>
+        </div>
       </div>
       <svg class="localGraph" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
-        ${edgeSVG}
-        ${nodeSVG}
+        <g class="graphTransform" data-scale="1" data-tx="0" data-ty="0" transform="translate(0,0) scale(1)">
+          ${edgeSVG}
+          ${nodeSVG}
+        </g>
       </svg>
     </div>
   `;
@@ -2471,7 +2751,147 @@ function renderLocalGraph(centerId){
     const svg = $("svg.localGraph");
     if(!svg) return;
     const tt = $("#tooltip");
-    $$(".gNode", svg).forEach(n=>{
+    const nodeEls = $$(".gNode", svg);
+    const edgeEls = $$(".gEdge", svg);
+    const gTransform = $("g.graphTransform", svg);
+    const graphWrap = svg.closest(".graphWrap");
+
+    function applyGraphTransform(){
+      if(!gTransform) return;
+      const s = Number(gTransform.dataset.scale || 1);
+      const tx = Number(gTransform.dataset.tx || 0);
+      const ty = Number(gTransform.dataset.ty || 0);
+      gTransform.setAttribute("transform", `translate(${tx},${ty}) scale(${s})`);
+    }
+    function screenToSvg(clientX, clientY){
+      const pt = svg.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const ctm = svg.getScreenCTM();
+      return ctm ? pt.matrixTransform(ctm.inverse()) : {x:0,y:0};
+    }
+    if(graphWrap && gTransform){
+      graphWrap.addEventListener("wheel", (ev)=>{
+        ev.preventDefault();
+        const v = screenToSvg(ev.clientX, ev.clientY);
+        let s = Number(gTransform.dataset.scale || 1);
+        let tx = Number(gTransform.dataset.tx || 0);
+        let ty = Number(gTransform.dataset.ty || 0);
+        const cx = (v.x - tx) / s;
+        const cy = (v.y - ty) / s;
+        s = clamp(s * (1 - ev.deltaY * 0.002), 0.35, 3);
+        gTransform.dataset.scale = String(s);
+        gTransform.dataset.tx = String(v.x - cx * s);
+        gTransform.dataset.ty = String(v.y - cy * s);
+        applyGraphTransform();
+      }, {passive:false});
+      let panning = false;
+      let panStart = {vx:0, vy:0, tx:0, ty:0};
+      graphWrap.addEventListener("pointerdown", (ev)=>{
+        if(ev.target!==svg && ev.target!==gTransform) return;
+        ev.preventDefault();
+        const v = screenToSvg(ev.clientX, ev.clientY);
+        panning = true;
+        panStart = { vx: v.x, vy: v.y, tx: Number(gTransform.dataset.tx||0), ty: Number(gTransform.dataset.ty||0) };
+        graphWrap.setPointerCapture(ev.pointerId);
+      });
+      graphWrap.addEventListener("pointermove", (ev)=>{
+        if(!panning) return;
+        const v = screenToSvg(ev.clientX, ev.clientY);
+        gTransform.dataset.tx = String(panStart.tx + (v.x - panStart.vx));
+        gTransform.dataset.ty = String(panStart.ty + (v.y - panStart.vy));
+        applyGraphTransform();
+      });
+      graphWrap.addEventListener("pointerup", (ev)=>{ if(panning){ panning = false; graphWrap.releasePointerCapture(ev.pointerId); } });
+    }
+
+    function nodeCenter(g){
+      return { x: Number(g.dataset.cx || 0), y: Number(g.dataset.cy || 0) };
+    }
+    function setNodeCenter(g, cx, cy){
+      const wBox = Number(g.dataset.w || 170);
+      const hBox = Number(g.dataset.h || 34);
+      const x = cx - wBox/2;
+      const y = cy - hBox/2;
+      g.dataset.cx = String(cx);
+      g.dataset.cy = String(cy);
+      g.setAttribute("transform", `translate(${x},${y})`);
+    }
+    function edgePath(a, b){
+      if(layout==="force"){
+        return `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+      }
+      const dx = (b.x-a.x);
+      const cp1x = a.x + dx*0.4;
+      const cp2x = a.x + dx*0.6;
+      return `M ${a.x} ${a.y} C ${cp1x} ${a.y}, ${cp2x} ${b.y}, ${b.x} ${b.y}`;
+    }
+    function refreshEdges(){
+      const nodeById = new Map(nodeEls.map(n=>[n.dataset.id, n]));
+      edgeEls.forEach(p=>{
+        const aNode = nodeById.get(p.dataset.from || "");
+        const bNode = nodeById.get(p.dataset.to || "");
+        if(!aNode || !bNode) return;
+        p.setAttribute("d", edgePath(nodeCenter(aNode), nodeCenter(bNode)));
+      });
+    }
+    $$(".graphLayoutBtn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const next = btn.dataset.layout;
+        if(!next || next===WS.ui.localGraphLayout) return;
+        WS.ui.localGraphLayout = next;
+        saveWS();
+        renderDetail();
+      });
+    });
+    nodeEls.forEach(n=>{
+      if(layout==="force"){
+        if(!n.classList.contains("center")) n.style.cursor = "grab";
+        let dragging = false;
+        let moved = false;
+        let dragOffX = 0;
+        let dragOffY = 0;
+        const onMove = (ev)=>{
+          if(!dragging) return;
+          const pt = svg.createSVGPoint();
+          pt.x = ev.clientX;
+          pt.y = ev.clientY;
+          const ctm = svg.getScreenCTM();
+          if(!ctm) return;
+          const p = pt.matrixTransform(ctm.inverse());
+          const cx = clamp(p.x - dragOffX, pad, w-pad);
+          const cy = clamp(p.y - dragOffY, pad, h-pad);
+          setNodeCenter(n, cx, cy);
+          refreshEdges();
+          moved = true;
+        };
+        const onUp = ()=>{
+          if(!dragging) return;
+          dragging = false;
+          document.removeEventListener("pointermove", onMove);
+          document.removeEventListener("pointerup", onUp);
+          n.style.cursor = "";
+          setTimeout(()=>{ n.dataset.dragMoved = moved ? "1" : ""; }, 0);
+        };
+        n.addEventListener("pointerdown", (ev)=>{
+          if(n.classList.contains("center")) return;
+          ev.preventDefault();
+          const pt = svg.createSVGPoint();
+          pt.x = ev.clientX;
+          pt.y = ev.clientY;
+          const ctm = svg.getScreenCTM();
+          if(!ctm) return;
+          const p = pt.matrixTransform(ctm.inverse());
+          const cur = nodeCenter(n);
+          dragOffX = p.x - cur.x;
+          dragOffY = p.y - cur.y;
+          moved = false;
+          dragging = true;
+          n.style.cursor = "grabbing";
+          document.addEventListener("pointermove", onMove);
+          document.addEventListener("pointerup", onUp);
+        });
+      }
       n.addEventListener("mousemove", (ev)=>{
         const id = n.dataset.id;
         const c = IDX.byId.get(id);
@@ -2482,11 +2902,15 @@ function renderLocalGraph(centerId){
       });
       n.addEventListener("mouseleave", ()=>{ tt.style.display="none"; });
       n.addEventListener("click", ()=>{
+        if(n.dataset.dragMoved==="1"){
+          n.dataset.dragMoved = "";
+          return;
+        }
         const id = n.dataset.id;
         if(IDX.byId.has(id)) openControl(id);
       });
     });
-    $$(".gEdge", svg).forEach(p=>{
+    edgeEls.forEach(p=>{
       p.addEventListener("mousemove", (ev)=>{
         const rel = p.dataset.rel || "";
         tt.style.display="block";
@@ -2536,19 +2960,7 @@ function nextHighlight(dir=1){
 }
 
 /* ---------- Notes & evidence ---------- */
-function saveNotesFor(id){
-  const status = $("#noteStatus").value;
-  const tags = ($("#noteTags").value||"").split(",").map(s=>s.trim()).filter(Boolean);
-  const decision = $("#noteDecision").value||"";
-  const date = ($("#noteDate").value||"").trim() || nowISO();
-  const notes = $("#noteText").value||"";
-  const evidence = readEvidenceTable();
-
-  WS.notes[id] = {status, tags, decision, date, notes, evidence};
-  saveWS();
-  toast("Notes saved");
-  renderTree(); // update badges maybe later
-}
+/* saveNotesFor is defined in the v5 section below. */
 function renderEvidenceTable(id){
   const note = WS.notes[id] || {evidence:[]};
   const tbody = $("#evidenceTable tbody");
@@ -3458,7 +3870,19 @@ function bindUI(){
     b.addEventListener("click", ()=> setTab(b.dataset.tab));
   });
 
+  $("#introBtn").onclick = ()=> setTab("einfuehrung");
   $("#helpBtn").onclick = ()=>$("#helpModal").classList.add("show");
+
+  document.addEventListener("click", (e)=>{
+    const btn = e.target.closest(".introApplyBtn");
+    if(!btn) return;
+    const q = btn.getAttribute("data-intro-query");
+    const action = btn.getAttribute("data-intro-action");
+    if(q != null){ setTab("detail"); const el = $("#query"); if(el){ el.value = q; el.focus(); } if(typeof applyFilters==="function") applyFilters(); toast("Query übernommen"); }
+    if(action==="focus-url"){ setTab("detail"); const el = $("#url"); if(el) el.focus(); toast("URL-Feld fokussiert"); }
+    if(action==="go-detail") setTab("detail");
+    if(action==="go-selected") setTab("selected");
+  });
   $("#helpCloseBtn").onclick = ()=>$("#helpModal").classList.remove("show");
   $("#helpModal").addEventListener("click", (e)=>{
     if(e.target===$("#helpModal")) $("#helpModal").classList.remove("show");
@@ -3476,8 +3900,10 @@ function bindUI(){
     const el = $("#"+id);
     if(el) el.addEventListener("change", applyFilters);
   });
-  $("#keyword").addEventListener("input", ()=>{ clearTimeout(window._kwT); window._kwT=setTimeout(applyFilters, 150); });
-  $("#query").addEventListener("input", ()=>{ clearTimeout(window._qT); window._qT=setTimeout(applyFilters, 160); });
+  const debouncedApplyFiltersFast = debounce(applyFilters, 150);
+  const debouncedApplyFiltersQuery = debounce(applyFilters, 160);
+  $("#keyword").addEventListener("input", debouncedApplyFiltersFast);
+  $("#query").addEventListener("input", debouncedApplyFiltersQuery);
 
   // toggles
   $("#compactBtn").onclick = ()=>{ setToggle($("#compactBtn"), $("#compactBtn").getAttribute("aria-pressed")!=="true"); applyFilters(); };
@@ -3585,7 +4011,8 @@ function bindUI(){
     }
     e.target.value="";
   });
-  $("#diffSearch").addEventListener("input", ()=>{ clearTimeout(window._dsT); window._dsT=setTimeout(refreshDiffTable, 140); });
+  const debouncedRefreshDiff = debounce(refreshDiffTable, 140);
+  $("#diffSearch").addEventListener("input", debouncedRefreshDiff);
   ["diffShowNew","diffShowRemoved","diffShowChanged"].forEach(id=>{
     $("#"+id).onclick = ()=>{
       setToggle($("#"+id), $("#"+id).getAttribute("aria-pressed")!=="true");
@@ -3631,6 +4058,7 @@ function bindUI(){
     const file = e.target.files?.[0];
     if(!file) return;
     setStatus("reading file…");
+    setLoading(true);
     try{
       const txt = await file.text();
       const json = JSON.parse(txt);
@@ -3639,13 +4067,14 @@ function bindUI(){
     }catch(err){
       toast("Upload parse error", 3000);
     }
+    setLoading(false);
     setStatus("ready");
     e.target.value="";
   });
 
   // keyboard shortcuts
   window.addEventListener("keydown", (e)=>{
-    if(e.key==="/" && document.activeElement?.tagName!=="INPUT" && document.activeElement?.tagName!=="TEXTAREA"){
+    if(e.key==="/" && document.activeElement?.tagName!=="INPUT" && document.activeElement?.tagName!=="TEXTAREA" && document.activeElement?.tagName!=="SELECT"){
       e.preventDefault();
       $("#query").focus();
       return;
@@ -3659,6 +4088,22 @@ function bindUI(){
     }
     if(e.key==="p"){
       if(currentTab()==="detail"){ nextHighlight(-1); }
+    }
+    // Arrow Up/Down: move selection in control list (when not in input/textarea/select)
+    const inInput = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "");
+    if(!inInput && IDX && FILTERED.length && (e.key==="ArrowDown" || e.key==="ArrowUp")){
+      let idx = FILTERED.findIndex(c=>c.id===ACTIVE_ID);
+      if(idx===-1) idx = e.key==="ArrowDown" ? 0 : FILTERED.length-1;
+      else if(e.key==="ArrowDown") idx = Math.min(idx+1, FILTERED.length-1);
+      else idx = Math.max(idx-1, 0);
+      const next = FILTERED[idx];
+      if(next){ 
+        e.preventDefault(); 
+        openControl(next.id); 
+        setTab("detail");
+        const row = $$("#tree .treeRow[data-kind=control]").find(r=>r.dataset.id===next.id);
+        if(row) row.scrollIntoView({behavior:"smooth", block:"nearest"});
+      }
     }
   });
 
@@ -3675,51 +4120,7 @@ function bindUI(){
 }
 
 /* ---------- Load flow ---------- */
-async function loadFromUrl(){
-  const url = $("#url").value.trim();
-  if(!url){ toast("No URL"); return; }
-  WS.lastUrl = url;
-  saveWS();
-  setStatus("loading…");
-  try{
-    const json = await fetchJSON(url);
-    await loadCatalog(json, url);
-    toast("Catalog loaded");
-  }catch(err){
-    toast(`Load error: ${esc(err.message)}`, 3200);
-  }finally{
-    setStatus("ready");
-  }
-}
-
-async function loadCatalog(json, sourceUrl){
-  CATALOG_A = json;
-  IDX = buildIndex(json);
-  setMetadata(IDX, sourceUrl);
-  populateFilters(IDX);
-
-  // Apply WS restore (filters etc.) after populating selects
-  restoreUIFromWS();
-
-  // default list
-  FILTERED = IDX.controls.slice();
-
-  // render
-  applyFilters();
-
-  // Parse hash deep-link (id/group/alias)
-  parseHash();
-
-  // initial selected count
-  $("#selectedCount").textContent = String(getSelection().length);
-  $("#brokenCount").textContent = String(IDX.broken.length);
-
-  // prepare trace selects
-  fillTraceSelects();
-
-  // lint initial
-  refreshLint();
-}
+/* loadFromUrl/loadCatalog are defined in the v5 section below. */
 
 
 /* ============================
@@ -3868,9 +4269,9 @@ async function refreshCachePanel(){
     tb.appendChild(row);
   }
 }
-async function fetchJSONWithMeta(url){
+async function fetchJSONWithMeta(url, opts={}){
   const raw = toRaw(url);
-  const res = await fetch(raw, {cache:"no-store"});
+  const res = await fetch(raw, {cache:"no-store", signal: opts.signal});
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
   const meta = {
     rawUrl: raw,
@@ -4571,26 +4972,41 @@ function explainHref(href){
 
 /* ---------- OVERRIDES ---------- */
 
-// 1) setTab: add refresh for new panels + cache
+// Lazy tabs: heavy panels (dashboard, mapping, lint, diff) only refresh on first visit
+const TABS_VISITED = { dashboard: false, mapping: false, lint: false, diff: false };
+
+// 1) setTab: add refresh for new panels + lazy heavy panels
 function setTab(name){
   $$(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
   $$(".panel").forEach(p=>p.hidden = (p.id !== `panel-${name}`));
   WS.ui.activeTab = name;
   saveWS();
-  if(name==="dashboard") refreshDashboard();
+  if(name==="dashboard"){ if(!TABS_VISITED.dashboard){ TABS_VISITED.dashboard=true; refreshDashboard(); } }
   if(name==="selected") refreshSelectedPanel();
-  if(name==="mapping") refreshMapping();
-  if(name==="lint") refreshLint();
-  if(name==="diff") refreshDiffTable();
+  if(name==="mapping"){ if(!TABS_VISITED.mapping){ TABS_VISITED.mapping=true; refreshMapping(); } }
+  if(name==="lint"){ if(!TABS_VISITED.lint){ TABS_VISITED.lint=true; refreshLint(); } }
+  if(name==="diff"){ if(!TABS_VISITED.diff){ TABS_VISITED.diff=true; refreshDiffTable(); } }
   if(name==="resources") refreshResources();
   if(name==="review") refreshReview();
   if(name==="workspace"){ updateWSPreview(); refreshCachePanel(); }
 }
 
-// 2) parseHash: add resource deep-link
+// 2) parseHash: add resource deep-link + Einführung deep-link
 function parseHash(){
   const h = (location.hash||"").replace(/^#/, "");
   if(!h) return;
+
+  if(h.startsWith("einfuehrung")){
+    setTab("einfuehrung");
+    const section = (h === "einfuehrung" || h === "einfuehrung-") ? null : h.replace(/^einfuehrung-?/, "");
+    if(section){
+      setTimeout(()=>{
+        const el = document.getElementById(section);
+        if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+      }, 200);
+    }
+    return;
+  }
 
   const params = new URLSearchParams(h);
   const id = params.get("id");
@@ -4720,12 +5136,20 @@ function saveNotesFor(id){
 }
 
 // 5) loadFromUrl: cache policy support
+let loadAbortController = null;
+let loadRequestSeq = 0;
 async function loadFromUrl(){
   const url = $("#url").value.trim();
   if(!url){ toast("No URL"); return; }
+  const mySeq = ++loadRequestSeq;
+  if(loadAbortController){
+    loadAbortController.abort();
+  }
+  loadAbortController = new AbortController();
   WS.lastUrl = url;
   saveWS();
   setStatus("loading…");
+  setLoading(true);
 
   const policy = (WS.ui.cachePolicy || "network");
   const rawKey = toRaw(url);
@@ -4733,25 +5157,35 @@ async function loadFromUrl(){
   let loadedFromCache = false;
   if(policy==="prefer"){
     const cached = await cacheGet(rawKey);
+    if(mySeq !== loadRequestSeq) return;
     if(cached?.json){
       loadedFromCache = true;
       toast(`Loaded cached copy (${(cached.savedAt||"").slice(0,10)})`, 2200);
       await loadCatalog(cached.json, url);
+      if(mySeq !== loadRequestSeq) return;
     }
   }
 
   try{
-    const {json, meta, raw} = await fetchJSONWithMeta(url);
+    const {json, meta, raw} = await fetchJSONWithMeta(url, {signal: loadAbortController.signal});
+    if(mySeq !== loadRequestSeq) return;
     await loadCatalog(json, url);
+    if(mySeq !== loadRequestSeq) return;
     await cachePut(rawKey, json, meta, {controls: (IDX?.controls?.length||0), size: approxSize(json)});
+    if(mySeq !== loadRequestSeq) return;
     if(loadedFromCache){
       toast("Updated from network", 2000);
     }else{
       toast("Catalog loaded", 1800);
     }
   }catch(err){
+    if(err?.name==="AbortError"){
+      return;
+    }
+    if(mySeq !== loadRequestSeq) return;
     if(!loadedFromCache){
       const cached = await cacheGet(rawKey);
+      if(mySeq !== loadRequestSeq) return;
       if(cached?.json){
         toast("Network failed — loaded from cache", 2600);
         await loadCatalog(cached.json, url);
@@ -4762,9 +5196,12 @@ async function loadFromUrl(){
       toast(`Network failed — kept cached version`, 2600);
     }
   }finally{
-    setStatus("ready");
-    // refresh cache panel if open
-    if(currentTab()==="workspace") refreshCachePanel();
+    if(mySeq === loadRequestSeq){
+      setLoading(false);
+      setStatus("ready");
+      // refresh cache panel if open
+      if(currentTab()==="workspace") refreshCachePanel();
+    }
   }
 }
 
@@ -4772,6 +5209,11 @@ async function loadFromUrl(){
 async function loadCatalog(json, sourceUrl){
   CATALOG_A = json;
   IDX = buildIndex(json);
+
+  TABS_VISITED.dashboard = false;
+  TABS_VISITED.mapping = false;
+  TABS_VISITED.lint = false;
+  TABS_VISITED.diff = false;
 
   // v5: resource reference index
   buildResourceRefs();
